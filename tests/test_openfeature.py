@@ -34,7 +34,7 @@ class TestAvsbOpenFeatureProvider:
             "sdkKey": "sdk-test",
             "environmentKey": "test",
             "publishedAt": "2026-01-01T00:00:00Z",
-            "collectEndpoint": "https://collect.avsb.cloud/v1/events",
+            "collectEndpoint": "https://ingest.avsb.cloud/v1/events",
             "flags": flags or [],
             "audiences": audiences or [],
         }

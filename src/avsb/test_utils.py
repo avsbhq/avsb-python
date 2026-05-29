@@ -79,7 +79,7 @@ def build_minimal_datafile(**overrides: Any) -> dict[str, Any]:
         "sdkKey": "sdk-test",
         "environmentKey": "test",
         "publishedAt": "2026-01-01T00:00:00.000Z",
-        "collectEndpoint": "https://collect.avsb.cloud/v1/events",
+        "collectEndpoint": "https://ingest.avsb.cloud/v1/events",
         "flags": [],
         "audiences": [],
     }
