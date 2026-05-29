@@ -10,6 +10,13 @@ requires-python = ">=3.10"
 license = "MIT"
 authors = [{name = "AvsB"}]
 dependencies = []
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://avsb.cloud"
+Documentation = "https://avsb.cloud/docs"
+Repository = "https://github.com/avsbhq/avsb-python"
+Issues = "https://github.com/avsbhq/avsb-python/issues"
 
 [project.optional-dependencies]
 fastapi = ["fastapi>=0.100", "httpx>=0.25"]
