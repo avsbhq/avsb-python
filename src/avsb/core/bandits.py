@@ -1,11 +1,11 @@
 """
-Bandit evaluation engine — Python port of packages/avsb-core/src/bandits.ts.
+Bandit evaluation engine: Python port of packages/avsb-core/src/bandits.ts.
 
 Algorithms: epsilon-greedy, Thompson sampling, UCB1.
 
 Design invariants (mirrors the TypeScript source):
   - Algorithms are pure functions of (per_action, actions, hash_bucket?).
-  - No random.random() — every stochastic step is seeded from murmurhash3
+  - No random.random(): every stochastic step is seeded from murmurhash3
     so a (bandit_key, context) pair produces a stable decision.
   - Tie-breaking is alphabetical on action id.
 """

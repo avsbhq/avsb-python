@@ -1,5 +1,5 @@
 """
-Wire-protocol types for the A vs B SDK — Python port of @avsbhq/core src/types.ts.
+Wire-protocol types for the A vs B SDK: Python port of @avsbhq/core src/types.ts.
 
 Every dataclass here corresponds 1-to-1 to the TypeScript interface at the
 same spec §2 section.  Only server-side-relevant shapes are modelled; browser-
@@ -49,7 +49,7 @@ class ContextMeta:
 
 @dataclass
 class SingleContext:
-    """A single kinded context — 'user', 'organization', etc."""
+    """A single kinded context: 'user', 'organization', etc."""
 
     kind: str
     key: str
@@ -73,7 +73,7 @@ class SingleContext:
 
 @dataclass
 class MultiContext:
-    """Multi-context container — kind == 'multi'."""
+    """Multi-context container: kind == 'multi'."""
 
     kind: Literal["multi"]
     contexts: dict[str, SingleContext] = field(default_factory=dict)
@@ -183,7 +183,7 @@ from typing import Protocol, runtime_checkable
 
 @runtime_checkable
 class StickyBucketService(Protocol):
-    """Hot-path sticky-bucket store — synchronous lookups required."""
+    """Hot-path sticky-bucket store: synchronous lookups required."""
 
     def lookup(self, user_id: str, flag_key: str) -> StickyAssignment | None: ...
 

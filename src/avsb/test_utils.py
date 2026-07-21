@@ -1,5 +1,5 @@
 """
-Test utilities — Python equivalent of @avsbhq/test.
+Test utilities: Python equivalent of @avsbhq/test.
 
 Provides:
   - InMemoryDatafileLoader: load a FlagDatafile from a dict without network calls.

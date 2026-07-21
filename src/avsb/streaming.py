@@ -1,7 +1,7 @@
 """
 SSE streaming client backed by httpx.
 
-httpx is an optional dependency — import it with:
+httpx is an optional dependency; import it with:
     pip install avsb[streaming]
 
 The streaming connection is deferred; this module surfaces the API surface

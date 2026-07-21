@@ -1,7 +1,7 @@
 """
-Holdout evaluation — Python port of packages/avsb-core/src/holdouts.ts.
+Holdout evaluation: Python port of packages/avsb-core/src/holdouts.ts.
 
-Spec §8.2 — holdouts + mutual exclusion.
+Spec §8.2: holdouts + mutual exclusion.
 """
 
 from __future__ import annotations

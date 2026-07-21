@@ -1,5 +1,5 @@
 """
-Flag evaluator — Python port of packages/avsb-core/src/evaluate.ts.
+Flag evaluator: Python port of packages/avsb-core/src/evaluate.ts.
 
 evaluate_flag() is the core hot-path function. It returns a FlagEvaluationDetails
 (internal engine type) which the public client.py surface maps to a public Flag.
@@ -125,10 +125,10 @@ def evaluate_flag(
       2. Enabled check (disabled)
       3. User overrides (override → mapped to datafileOverride by the public client)
       4. Holdout check (holdout)
-      5. Rules loop — targeted_delivery → ab_test (in order; first match wins)
+      5. Rules loop: targeted_delivery → ab_test (in order; first match wins)
       6. Default variation
 
-    Returns FlagEvaluationDetails — an internal type.  The public client maps
+    Returns FlagEvaluationDetails, an internal type.  The public client maps
     the `source` field from the legacy enum to the public EvaluationSource.
     """
     if reasons is None:

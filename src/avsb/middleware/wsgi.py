@@ -1,5 +1,5 @@
 """
-Generic WSGI middleware — attaches an AvsbServer to each environ dict.
+Generic WSGI middleware: attaches an AvsbServer to each environ dict.
 
 Usage::
 

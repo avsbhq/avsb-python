@@ -1,5 +1,5 @@
 """
-Generic ASGI middleware — attaches an AvsbServer to each request scope.
+Generic ASGI middleware: attaches an AvsbServer to each request scope.
 
 Usage::
 

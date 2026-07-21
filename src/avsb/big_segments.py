@@ -1,5 +1,5 @@
 """
-BigSegmentStore — Python port of the §2.9 interface + in-memory implementation.
+BigSegmentStore: Python port of the §2.9 interface + in-memory implementation.
 
 The store protocol mirrors BigSegmentStore in types.ts.
 """

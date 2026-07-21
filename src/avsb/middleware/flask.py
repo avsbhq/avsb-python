@@ -1,5 +1,5 @@
 """
-Flask extension — integrates AvsbServer with a Flask application.
+Flask extension: integrates AvsbServer with a Flask application.
 
 Requires: pip install avsb[flask]
 

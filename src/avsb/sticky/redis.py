@@ -1,5 +1,5 @@
 """
-RedisStickyBucketService — Redis-backed sticky-bucket store.
+RedisStickyBucketService: Redis-backed sticky-bucket store.
 
 Requires: pip install avsb[redis]
 

@@ -1,5 +1,5 @@
 """
-FastAPI / Starlette middleware — attaches AvsbServer to each request state.
+FastAPI / Starlette middleware: attaches AvsbServer to each request state.
 
 Requires: pip install avsb[fastapi]
 

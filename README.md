@@ -1,4 +1,4 @@
-# avsb — Python SDK
+# avsb: Python SDK
 
 Server-side Python SDK for the [A vs B](https://app.avsb.cloud) feature-flag and experimentation platform.
 
@@ -80,7 +80,7 @@ asyncio.run(main())
 
 ## 3. SDK keys
 
-Get a **server SDK key** from your A vs B project's Environments page. Store it in an environment variable — never hard-code it.
+Get a **server SDK key** from your A vs B project's Environments page. Store it in an environment variable; never hard-code it.
 
 ```bash
 export AVSB_SDK_KEY=sdk-...
@@ -97,7 +97,7 @@ Never use the public (client-side) SDK key in server code. Server SDK keys carry
 
 ## 4. Identity
 
-### `SingleContext.user(key, **attrs)` — build a user context
+### `SingleContext.user(key, **attrs)`: build a user context
 
 ```python
 from avsb import SingleContext
@@ -105,7 +105,7 @@ from avsb import SingleContext
 ctx = SingleContext.user(key="u_123", plan="pro", beta_tester=True)
 ```
 
-### `on_ready()` / `on_error()` — lifecycle callbacks (Ruby-style)
+### `on_ready()` / `on_error()`: lifecycle callbacks (Ruby-style)
 
 `AvsbServer` fires the `on_ready` and `on_error` callbacks supplied at construction when the datafile is loaded or when an error occurs:
 
@@ -123,13 +123,13 @@ server = AvsbServer(
 )
 ```
 
-### `identify(context)` — notify downstream integrations
+### `identify(context)`: notify downstream integrations
 
 ```python
 server.identify(ctx)
 ```
 
-### `flush_decision_log()` — retrieve and clear the decision log buffer
+### `flush_decision_log()`: retrieve and clear the decision log buffer
 
 ```python
 log = server.flush_decision_log()
@@ -141,7 +141,7 @@ for entry in log:
 
 ## 5. Multi-context
 
-A vs B supports multi-context evaluation — bucketing a flag against both a user and an organisation simultaneously.
+A vs B supports multi-context evaluation: bucketing a flag against both a user and an organisation simultaneously.
 
 ```python
 from avsb import SingleContext, MultiContext
@@ -178,32 +178,32 @@ config       = server.get_json_flag("api-config", {"timeout": 5000}, context=ctx
 
 Each shortcut returns the raw typed value. A `default_value` is required on every call.
 
-### `get_flag` — full `Flag` envelope
+### `get_flag`: full `Flag` envelope
 
 ```python
 from avsb import Flag
 
 flag: Flag = server.get_flag("checkout-v2", False, context=ctx)
 
-flag.value           # T — the evaluated value
-flag.variation_key   # str | None — matched variation key
+flag.value           # T: the evaluated value
+flag.variation_key   # str | None: matched variation key
 flag.source          # EvaluationSource literal
 flag.rule_id         # str | None
 flag.rule_type       # RuleType literal | None
 flag.reasons         # tuple[str, ...]
-flag.evaluated_at    # int — ms epoch
-flag.duration_micros # int — microseconds spent in evaluator
-flag.is_enabled()    # bool — source=="rule" and value is truthy
-flag.exists()        # bool — source != "not_found"
+flag.evaluated_at    # int: ms epoch
+flag.duration_micros # int: microseconds spent in evaluator
+flag.is_enabled()    # bool: source=="rule" and value is truthy
+flag.exists()        # bool: source != "not_found"
 ```
 
-### `flush_decision_log` — all flags evaluated this request
+### `flush_decision_log`: all flags evaluated this request
 
 ```python
 entries = server.flush_decision_log()
 ```
 
-Each `DecisionLogEntry` contains the same fields as `Flag` plus `context_summary` (kind + key only — attributes are never logged).
+Each `DecisionLogEntry` contains the same fields as `Flag` plus `context_summary` (kind + key only; attributes are never logged).
 
 ---
 
@@ -448,7 +448,7 @@ value = server.get_bool_flag("checkout-v2", False, context=ctx)
 ```
 
 ```python
-# LaunchDarkly — multi-context (LDContext)
+# LaunchDarkly (multi-context, LDContext)
 from ldclient import Context
 ctx = Context.multi_builder()\
     .add(Context.builder("alice").kind("user").build())\
@@ -457,7 +457,7 @@ ctx = Context.multi_builder()\
 ```
 
 ```python
-# A vs B — multi-context
+# A vs B (multi-context)
 from avsb import SingleContext, MultiContext
 
 ctx = MultiContext(
@@ -470,7 +470,7 @@ ctx = MultiContext(
 ```
 
 Key differences:
-- `get_bool_flag` requires an explicit `default_value` — there is no untyped `.variation()`.
+- `get_bool_flag` requires an explicit `default_value`; there is no untyped `.variation()`.
 - `get_flag` returns a `Flag` dataclass with `value`, `variation_key`, `source`, `reasons`, and helpers `is_enabled()` / `exists()`. No separate detail call is needed.
 - Multi-context is a first-class constructor, not a builder pattern.
 
@@ -496,11 +496,11 @@ gate = server.get_bool_flag("checkout-v2", False, context=ctx)
 ```
 
 ```python
-# Statsig — track event
+# Statsig (track event)
 statsig.log_event(user, "purchase", value=49.99, metadata={"plan": "pro"})
 ```
 
 ```python
-# A vs B — track event
+# A vs B (track event)
 server.track("purchase", context=ctx, value=49.99, properties={"plan": "pro"})
 ```

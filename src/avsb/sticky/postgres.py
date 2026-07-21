@@ -1,5 +1,5 @@
 """
-PostgresStickyBucketService — PostgreSQL-backed sticky-bucket store.
+PostgresStickyBucketService: PostgreSQL-backed sticky-bucket store.
 
 Requires: pip install avsb[postgres]
 

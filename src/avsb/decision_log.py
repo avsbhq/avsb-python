@@ -1,5 +1,5 @@
 """
-DecisionLog + DecisionLogEntry — Python mirror of §2.5.
+DecisionLog + DecisionLogEntry: Python mirror of §2.5.
 
 Implements private-attribute redaction: any reason string that contains a
 value from the context's privateAttributes set has that value replaced with

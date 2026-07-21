@@ -1,10 +1,10 @@
 """
-DynamoDBStickyBucketService — AWS DynamoDB-backed sticky-bucket store.
+DynamoDBStickyBucketService: AWS DynamoDB-backed sticky-bucket store.
 
 Requires: pip install avsb[aws]
 
 Table schema:
-  Partition key: ``pk`` (String) — value: ``{user_id}#{flag_key}``
+  Partition key: ``pk`` (String), value: ``{user_id}#{flag_key}``
   All other fields stored as a single JSON attribute ``assignment``.
 """
 

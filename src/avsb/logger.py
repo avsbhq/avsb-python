@@ -2,7 +2,7 @@
 Structured logger backed by stdlib logging.
 
 Provides debug/info/warn/error methods and a child() factory for scoped
-sub-loggers — matching the Logger interface in types.ts §2.13.
+sub-loggers, matching the Logger interface in types.ts §2.13.
 """
 
 from __future__ import annotations

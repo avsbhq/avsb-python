@@ -1,4 +1,4 @@
-"""Core evaluation engine — not part of the public SDK surface."""
+"""Core evaluation engine: not part of the public SDK surface."""
 
 from .types import (
     EvalContext,

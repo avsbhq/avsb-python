@@ -1,5 +1,5 @@
 """
-Multi-context helpers — Python port of packages/avsb-core/src/context.ts.
+Multi-context helpers: Python port of packages/avsb-core/src/context.ts.
 
 All function names follow the Python naming convention (snake_case) but the
 semantics are an exact match to the TS originals.
@@ -43,7 +43,7 @@ def context_summary(ctx: EvalContext) -> list[dict[str, str]]:
     """
     Produce the kind/key summary stored in DecisionLogEntry.
 
-    Attributes are intentionally omitted — they may carry PII.
+    Attributes are intentionally omitted because they may carry PII.
     """
     if isinstance(ctx, MultiContext):
         return [{"kind": sub.kind, "key": sub.key} for sub in ctx.contexts.values()]

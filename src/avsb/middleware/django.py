@@ -1,5 +1,5 @@
 """
-Django middleware — attaches AvsbServer to each request object.
+Django middleware: attaches AvsbServer to each request object.
 
 Requires: pip install avsb[django]
 

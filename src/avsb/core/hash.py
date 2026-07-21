@@ -1,5 +1,5 @@
 """
-MurmurHash3_x86_32 — exact Python port of packages/avsb-core/src/hash.ts.
+MurmurHash3_x86_32: exact Python port of packages/avsb-core/src/hash.ts.
 
 All arithmetic mirrors the TypeScript version:
   - Characters are read as their code-point (ord()) masked to 8 bits
@@ -10,7 +10,7 @@ All arithmetic mirrors the TypeScript version:
 The function is a pure hash of a Unicode string, treating each character as
 its low-byte code-point value (consistent with the TS implementation which uses
 charCodeAt & 0xff).  This means multi-byte Unicode characters above U+00FF will
-have their high bytes silently dropped — the same behaviour as TS.
+have their high bytes silently dropped, the same behaviour as TS.
 """
 
 from __future__ import annotations

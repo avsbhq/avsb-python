@@ -1,7 +1,7 @@
 """
-InMemoryStickyBucketService — in-process sticky-bucket store.
+InMemoryStickyBucketService: in-process sticky-bucket store.
 
-Suitable for single-process servers and tests.  Not distributed — use Redis,
+Suitable for single-process servers and tests.  Not distributed; use Redis,
 DynamoDB, or Postgres backends for multi-instance deployments.
 """
 

@@ -1,5 +1,5 @@
 """
-AvsbServer + AsyncAvsbServer — public Python SDK clients.
+AvsbServer + AsyncAvsbServer: public Python SDK clients.
 
 Per spec §5.3, every get_*_flag method REQUIRES a default value.
 
@@ -219,6 +219,6 @@ class AvsbServer:
 class AsyncAvsbServer(AvsbServer):
     """
     Async-first variant.  All flag-evaluation methods are synchronous (they
-    run in the calling thread) — async only applies to the datafile fetch so
+    run in the calling thread); async only applies to the datafile fetch so
     it doesn't block the event loop.
     """

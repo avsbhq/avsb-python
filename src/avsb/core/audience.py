@@ -1,8 +1,8 @@
 """
-Audience condition evaluator — Python port of packages/avsb-core/src/audience.ts.
+Audience condition evaluator: Python port of packages/avsb-core/src/audience.ts.
 
 Browser-detected condition types (DEVICE, BROWSER, PLATFORM, LANGUAGE, COOKIE,
-QUERY_PARAM) always return False on the server side — exactly as the TS source
+QUERY_PARAM) always return False on the server side, exactly as the TS source
 does when `isBrowser` is false.
 """
 
@@ -197,5 +197,5 @@ def _eval_custom_attribute(condition: Condition, context: EvalContext) -> bool:
 
 
 def _is_legacy_context(ctx: EvalContext) -> bool:
-    """Always False — Python SDK has no legacy context shape."""
+    """Always False: Python SDK has no legacy context shape."""
     return False
