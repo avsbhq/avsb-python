@@ -1,38 +1,53 @@
 """
-InMemoryStickyBucketService: in-process sticky-bucket store.
+In-process sticky-bucket store.
 
-Suitable for single-process servers and tests.  Not distributed; use Redis,
-DynamoDB, or Postgres backends for multi-instance deployments.
+Right for a single-process server and for tests. Wrong for anything
+multi-process: each worker would keep its own assignments, so a visitor
+load-balanced to another worker gets re-bucketed. Use the Redis, DynamoDB, or
+Postgres store for a fleet.
 """
 
 from __future__ import annotations
+
+import threading
 
 from ..core.types import StickyAssignment
 
 
 class InMemoryStickyBucketService:
-    """
-    Thread-unsafe in-memory sticky-bucket store.
+    """Thread-safe dict-backed sticky-bucket store.
 
-    For production multi-process deployments use RedisStickyBucketService,
-    DynamoDBStickyBucketService, or PostgresStickyBucketService.
+    Unbounded by design: the caller decides its lifetime, and silently evicting
+    an assignment would re-bucket a visitor mid-experiment. Call :meth:`clear`
+    between tests, and reach for a real store in production.
     """
 
     def __init__(self) -> None:
-        # Keyed by (user_id, flag_key)
         self._store: dict[tuple[str, str], StickyAssignment] = {}
+        self._lock = threading.Lock()
 
     def lookup(self, user_id: str, flag_key: str) -> StickyAssignment | None:
-        return self._store.get((user_id, flag_key))
+        """Return the stored assignment, or ``None`` on a miss."""
+        with self._lock:
+            return self._store.get((user_id, flag_key))
 
-    def save(self, user_id: str, flag_key: str, assignment: StickyAssignment) -> None:
-        self._store[(user_id, flag_key)] = assignment
+    def save(
+        self, user_id: str, flag_key: str, assignment: StickyAssignment
+    ) -> None:
+        """Store an assignment, replacing any earlier one."""
+        with self._lock:
+            self._store[(user_id, flag_key)] = assignment
 
     def delete(self, user_id: str, flag_key: str) -> None:
-        self._store.pop((user_id, flag_key), None)
+        """Forget one assignment, so the next evaluation re-buckets."""
+        with self._lock:
+            self._store.pop((user_id, flag_key), None)
 
     def clear(self) -> None:
-        self._store.clear()
+        """Forget every assignment."""
+        with self._lock:
+            self._store.clear()
 
     def __len__(self) -> int:
-        return len(self._store)
+        with self._lock:
+            return len(self._store)

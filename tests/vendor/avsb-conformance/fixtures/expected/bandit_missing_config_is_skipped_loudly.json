@@ -1,0 +1,20 @@
+{
+  "case": "bandit_missing_config_is_skipped_loudly",
+  "family": "bandit",
+  "description": "A bandit-typed rule with neither an inline config nor a banditId is skipped with a reason naming the rule. It must never silently behave as \"no rules matched\" (spec §1.2 silent-drop ban).",
+  "datafile": "datafiles/bandit_missing_config_is_skipped_loudly.datafile.json",
+  "context": "contexts/bandit_missing_config_is_skipped_loudly.context.json",
+  "flagKey": "bandit-broken-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "control-copy",
+    "variationKey": "control",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_bandit_no_config\" skipped (bandit rule carries no bandit config)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

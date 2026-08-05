@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "projectType": "FEATURE_FLAG",
+  "sdkKey": "sdk_production_conformancefixture01",
+  "environmentKey": "production",
+  "publishedAt": "2026-05-29T00:00:00.000Z",
+  "collectEndpoint": "https://ingest.avsb.cloud",
+  "heartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat",
+  "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+  "flags": [
+    {
+      "type": "string",
+      "enabled": true,
+      "defaultVariationId": "var_control",
+      "variations": [
+        {
+          "id": "var_control",
+          "key": "control",
+          "value": "control-copy"
+        },
+        {
+          "id": "var_bold",
+          "key": "bold",
+          "value": "bold-copy"
+        },
+        {
+          "id": "var_plain",
+          "key": "plain",
+          "value": "plain-copy"
+        }
+      ],
+      "overrides": [],
+      "rules": [
+        {
+          "enabled": false,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": null,
+          "variations": [],
+          "type": "bandit",
+          "id": "rule_bandit_disabled",
+          "bandit": {
+            "algorithm": "ucb1",
+            "rewardMetric": "checkout_completed",
+            "actions": [
+              {
+                "id": "action_c_plain",
+                "variationId": "var_plain"
+              },
+              {
+                "id": "action_a_bold",
+                "variationId": "var_bold"
+              }
+            ]
+          }
+        }
+      ],
+      "id": "flag_bandit_1",
+      "key": "bandit-broken-feature"
+    }
+  ],
+  "audiences": []
+}

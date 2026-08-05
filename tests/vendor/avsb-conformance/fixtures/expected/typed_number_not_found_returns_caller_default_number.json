@@ -1,0 +1,19 @@
+{
+  "case": "typed_number_not_found_returns_caller_default_number",
+  "family": "typed",
+  "description": "A missing number flag returns the caller default with its numeric type intact.",
+  "datafile": "datafiles/typed_number_not_found_returns_caller_default_number.datafile.json",
+  "context": "contexts/typed_number_not_found_returns_caller_default_number.context.json",
+  "flagKey": "no-such-number-flag",
+  "defaultValue": -1,
+  "expected": {
+    "value": -1,
+    "variationKey": null,
+    "source": "not_found",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "flag \"no-such-number-flag\" not found in datafile"
+    ]
+  }
+}

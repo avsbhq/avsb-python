@@ -1,0 +1,8 @@
+{
+  "kind": "user",
+  "key": "u_recency_miss",
+  "purchaseHistory": {
+    "hasPurchased": true,
+    "lastPurchaseAt": 4102444800000
+  }
+}

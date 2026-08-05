@@ -1,0 +1,20 @@
+{
+  "case": "bandit_rule_disabled_is_skipped_before_dispatch",
+  "family": "bandit",
+  "description": "A disabled bandit rule is skipped by the enablement check, with the same reason any disabled rule produces, and never reaches the bandit engine.",
+  "datafile": "datafiles/bandit_rule_disabled_is_skipped_before_dispatch.datafile.json",
+  "context": "contexts/bandit_rule_disabled_is_skipped_before_dispatch.context.json",
+  "flagKey": "bandit-broken-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "control-copy",
+    "variationKey": "control",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_bandit_disabled\" skipped (disabled)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

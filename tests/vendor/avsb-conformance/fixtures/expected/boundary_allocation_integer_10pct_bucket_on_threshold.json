@@ -1,0 +1,27 @@
+{
+  "case": "boundary_allocation_integer_10pct_bucket_on_threshold",
+  "family": "boundary",
+  "description": "Allocation bucket 1000 against a 0.1 rollout, the exact pair report 04 section 5.7 named as diverging between Go and everyone else. Which side of the threshold it lands on is whatever the double multiply produces; every port must produce the same side as the reference.",
+  "datafile": "datafiles/boundary_allocation_integer_10pct_bucket_on_threshold.datafile.json",
+  "context": "contexts/boundary_allocation_integer_10pct_bucket_on_threshold.context.json",
+  "flagKey": "boundary-allocation-integer-10pct",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_alloc",
+    "bucket": 1000,
+    "why": "The exact bucket and allocation report 04 section 5.7 cites.",
+    "resolvedKey": "alloc10-exact-47811"
+  },
+  "expected": {
+    "value": "C",
+    "variationKey": "c",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_alloc\" excluded by traffic allocation (hash 1000 >= threshold 1000)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

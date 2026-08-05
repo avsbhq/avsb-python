@@ -1,0 +1,20 @@
+{
+  "case": "operator_commerce_lifetime_spend_gt_misses",
+  "family": "operator",
+  "description": "PURCHASE_HISTORY lifetime_spend_gt compares major-unit lifetimeSpend against a minor-unit condition value (25000 minor = 250.00 major at exponent 2). Non-matching context.",
+  "datafile": "datafiles/operator_commerce_lifetime_spend_gt_misses.datafile.json",
+  "context": "contexts/operator_commerce_lifetime_spend_gt_misses.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_operator\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

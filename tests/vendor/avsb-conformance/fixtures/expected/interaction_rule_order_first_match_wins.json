@@ -1,0 +1,19 @@
+{
+  "case": "interaction_rule_order_first_match_wins",
+  "family": "interaction",
+  "description": "Two rules both match; the first in declaration order serves and the second is never reached.",
+  "datafile": "datafiles/interaction_rule_order_first_match_wins.datafile.json",
+  "context": "contexts/interaction_rule_order_first_match_wins.context.json",
+  "flagKey": "interaction-rule-order",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "first",
+    "variationKey": "first",
+    "source": "rule",
+    "ruleId": "rule_first",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_first\" matched (targeted_delivery), serving variation \"first\""
+    ]
+  }
+}

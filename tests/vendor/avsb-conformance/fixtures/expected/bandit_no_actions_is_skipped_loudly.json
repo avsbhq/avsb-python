@@ -1,0 +1,20 @@
+{
+  "case": "bandit_no_actions_is_skipped_loudly",
+  "family": "bandit",
+  "description": "A bandit config declaring an empty actions list is skipped with a reason naming the bandit key.",
+  "datafile": "datafiles/bandit_no_actions_is_skipped_loudly.datafile.json",
+  "context": "contexts/bandit_no_actions_is_skipped_loudly.context.json",
+  "flagKey": "bandit-broken-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "control-copy",
+    "variationKey": "control",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_bandit_no_actions\" skipped (bandit \"rule_bandit_no_actions\" declares no actions)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

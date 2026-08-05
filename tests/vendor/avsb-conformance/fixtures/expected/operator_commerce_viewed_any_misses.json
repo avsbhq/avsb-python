@@ -1,0 +1,20 @@
+{
+  "case": "operator_commerce_viewed_any_misses",
+  "family": "operator",
+  "description": "PRODUCTS_VIEWED viewed_any matches when any listed SKU is in the caller-supplied viewedSkus list. Non-matching context.",
+  "datafile": "datafiles/operator_commerce_viewed_any_misses.datafile.json",
+  "context": "contexts/operator_commerce_viewed_any_misses.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_operator\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from avsb.core.types import BanditAction, BanditConfig
+from avsb.core.datafile_types import BanditAction, BanditConfig
 from avsb.core.bandits import (
     BanditModel,
     BanditPerActionStats,

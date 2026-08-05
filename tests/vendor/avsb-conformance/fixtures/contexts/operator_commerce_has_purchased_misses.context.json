@@ -1,0 +1,7 @@
+{
+  "kind": "user",
+  "key": "u_purchased_miss",
+  "purchaseHistory": {
+    "hasPurchased": false
+  }
+}

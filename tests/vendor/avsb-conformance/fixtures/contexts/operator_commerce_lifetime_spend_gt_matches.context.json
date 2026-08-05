@@ -1,0 +1,8 @@
+{
+  "kind": "user",
+  "key": "u_spend_hit",
+  "purchaseHistory": {
+    "hasPurchased": true,
+    "lifetimeSpend": 250.01
+  }
+}

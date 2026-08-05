@@ -1,0 +1,19 @@
+{
+  "case": "operator_commerce_zero_exponent_currency_matches",
+  "family": "operator",
+  "description": "With currencyExponent 0 (a zero-decimal currency such as JPY) the minor-unit condition value IS the major-unit amount, so 25000 means 25000, not 250. Matching context.",
+  "datafile": "datafiles/operator_commerce_zero_exponent_currency_matches.datafile.json",
+  "context": "contexts/operator_commerce_zero_exponent_currency_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

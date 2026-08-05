@@ -1,0 +1,19 @@
+{
+  "case": "operator_commerce_last_purchase_older_than_matches",
+  "family": "operator",
+  "description": "PURCHASE_HISTORY last_purchase_older_than compares lastPurchaseAt against now minus the declared days. Timestamps are pinned to 1970 and 2100 so the answer never drifts with the clock. Matching context.",
+  "datafile": "datafiles/operator_commerce_last_purchase_older_than_matches.datafile.json",
+  "context": "contexts/operator_commerce_last_purchase_older_than_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

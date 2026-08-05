@@ -1,0 +1,27 @@
+{
+  "case": "boundary_allocation_integer_10pct_bucket_above_threshold",
+  "family": "boundary",
+  "description": "Allocation bucket 1001 is unambiguously outside a 0.1 rollout, so the flag serves its default variation.",
+  "datafile": "datafiles/boundary_allocation_integer_10pct_bucket_above_threshold.datafile.json",
+  "context": "contexts/boundary_allocation_integer_10pct_bucket_above_threshold.context.json",
+  "flagKey": "boundary-allocation-integer-10pct",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_alloc",
+    "bucket": 1001,
+    "why": "One bucket above the threshold: outside under any reading.",
+    "resolvedKey": "alloc10-over-9866"
+  },
+  "expected": {
+    "value": "C",
+    "variationKey": "c",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_alloc\" excluded by traffic allocation (hash 1001 >= threshold 1000)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

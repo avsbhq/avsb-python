@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "projectType": "FEATURE_FLAG",
+  "sdkKey": "sdk_production_conformancefixture01",
+  "environmentKey": "production",
+  "publishedAt": "2026-05-29T00:00:00.000Z",
+  "collectEndpoint": "https://ingest.avsb.cloud",
+  "heartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat",
+  "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+  "flags": [
+    {
+      "type": "string",
+      "enabled": true,
+      "defaultVariationId": "var_control",
+      "variations": [
+        {
+          "id": "var_control",
+          "key": "control",
+          "value": "old"
+        },
+        {
+          "id": "var_treatment",
+          "key": "treatment",
+          "value": "new"
+        }
+      ],
+      "overrides": [],
+      "rules": [
+        {
+          "enabled": true,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": 1,
+          "variations": [
+            {
+              "variationId": "var_control",
+              "percentage": 0.5
+            },
+            {
+              "variationId": "var_treatment",
+              "percentage": 0.5
+            }
+          ],
+          "id": "rule_ab_split",
+          "type": "ab_test"
+        }
+      ],
+      "id": "flag_ab_1",
+      "key": "checkout-v2-experiment"
+    }
+  ],
+  "audiences": []
+}

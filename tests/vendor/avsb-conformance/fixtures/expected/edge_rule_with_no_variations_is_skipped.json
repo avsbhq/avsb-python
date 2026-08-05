@@ -1,0 +1,19 @@
+{
+  "case": "edge_rule_with_no_variations_is_skipped",
+  "family": "edge",
+  "description": "A targeted_delivery rule with an empty variations list cannot serve anything, so it is skipped and the flag falls through to its default.",
+  "datafile": "datafiles/edge_rule_with_no_variations_is_skipped.datafile.json",
+  "context": "contexts/edge_rule_with_no_variations_is_skipped.context.json",
+  "flagKey": "edge-empty-variations-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "no rules matched, returning default variation"
+    ]
+  }
+}

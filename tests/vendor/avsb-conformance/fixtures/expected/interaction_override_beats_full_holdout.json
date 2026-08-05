@@ -1,0 +1,19 @@
+{
+  "case": "interaction_override_beats_full_holdout",
+  "family": "interaction",
+  "description": "A datafile override wins over a 100% holdout: an override is explicit operator intent, and it is checked before the holdout.",
+  "datafile": "datafiles/interaction_override_beats_full_holdout.datafile.json",
+  "context": "contexts/interaction_override_beats_full_holdout.context.json",
+  "flagKey": "interaction-held-out-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "datafileOverride",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "matched user override for userId=\"user_forced\""
+    ]
+  }
+}

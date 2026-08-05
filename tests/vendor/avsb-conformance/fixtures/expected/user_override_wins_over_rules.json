@@ -1,0 +1,19 @@
+{
+  "case": "user_override_wins_over_rules",
+  "family": "core",
+  "description": "An explicit user override returns the override variation with source=datafileOverride.",
+  "datafile": "datafiles/user_override_wins_over_rules.datafile.json",
+  "context": "contexts/user_override_wins_over_rules.context.json",
+  "flagKey": "feature-overridden",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "forced-on",
+    "variationKey": "forced",
+    "source": "datafileOverride",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "matched user override for userId=\"user_42\""
+    ]
+  }
+}

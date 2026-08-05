@@ -1,0 +1,19 @@
+{
+  "case": "interaction_zero_allocation_holdout_lets_rules_run",
+  "family": "interaction",
+  "description": "A holdout at 0% allocation holds nobody out, so the rule serves normally.",
+  "datafile": "datafiles/interaction_zero_allocation_holdout_lets_rules_run.datafile.json",
+  "context": "contexts/interaction_zero_allocation_holdout_lets_rules_run.context.json",
+  "flagKey": "interaction-held-out-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_a_full",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_a_full\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

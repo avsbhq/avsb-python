@@ -1,0 +1,19 @@
+{
+  "case": "interaction_present_context_kind_without_attribute_matches",
+  "family": "interaction",
+  "description": "The same condition matches when the organization sub-context exists but carries no tier attribute, proving the previous case fails on the KIND and not the attribute.",
+  "datafile": "datafiles/interaction_present_context_kind_without_attribute_matches.datafile.json",
+  "context": "contexts/interaction_present_context_kind_without_attribute_matches.context.json",
+  "flagKey": "interaction-kind-scoped",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_kind_scoped",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_kind_scoped\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

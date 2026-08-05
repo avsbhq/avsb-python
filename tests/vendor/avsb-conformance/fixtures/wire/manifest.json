@@ -1,0 +1,290 @@
+{
+  "schema": "../../schema.wire.json",
+  "family": "wire-shape",
+  "contract": "SDK and API DX overhaul spec, section 1.1 (wire schema locks)",
+  "authoredByHand": true,
+  "note": "The locked JSON body shape for every data-plane POST an SDK makes. Field names are frozen vocabulary (report 05, section 9): the ingestion worker validates these exact names, and the dashboard reads the columns they land in. A port that renames a field silently drops the data.",
+  "eventNames": {
+    "flagExposure": "flag_exposure",
+    "flagHoldoutExposure": "flag_holdout_exposure"
+  },
+  "envelopes": [
+    {
+      "case": "exposure_batch",
+      "endpoint": "collect.batch",
+      "path": "/v1/collect/batch",
+      "method": "POST",
+      "contentType": "application/json",
+      "description": "Exposure batch. What every server SDK posts when a flag decision is served, and what the snippet posts for experiment exposures.",
+      "envelope": {
+        "keyField": "sdkKey",
+        "keyAlternatives": ["sdkKey", "snippetKey"],
+        "arrayField": "events",
+        "minItems": 1,
+        "maxItems": 100
+      },
+      "item": {
+        "required": [
+          "eventId",
+          "visitorId",
+          "experimentId",
+          "variationId",
+          "eventName",
+          "revenue",
+          "timestamp",
+          "pageUrl"
+        ],
+        "optional": ["value", "properties", "attributes"],
+        "types": {
+          "eventId": "string",
+          "visitorId": "string",
+          "experimentId": "string",
+          "variationId": "string",
+          "eventName": "string",
+          "revenue": "number|null",
+          "value": "number|null",
+          "timestamp": "number",
+          "pageUrl": "string",
+          "properties": "object",
+          "attributes": "object<string,string>"
+        },
+        "notes": {
+          "eventId": "UUID v4 stamped once at enqueue time so a retried batch carries the same ids and ingestion can deduplicate. The server mints one when an old client omits it; every SDK written from this contract sends it.",
+          "experimentId": "The rule id for a flag exposure, the experiment id for a web-experiment exposure.",
+          "revenue": "null on an exposure. Only conversion and order events carry money.",
+          "timestamp": "Milliseconds since the Unix epoch, as a number.",
+          "pageUrl": "Required by the ingestion schema, but an empty string is valid and is what server SDKs send: there is no page on a server.",
+          "attributes": "Registered attributes only. Unregistered keys are dropped server-side, so registering an attribute in the dashboard is what makes it queryable."
+        }
+      },
+      "example": {
+        "sdkKey": "sdk_production_abc123",
+        "events": [
+          {
+            "eventId": "8f14e45f-ceea-467a-9c1e-8b1d4f0b2b11",
+            "visitorId": "user_42",
+            "experimentId": "rule_ab_split",
+            "variationId": "var_treatment",
+            "eventName": "flag_exposure",
+            "revenue": null,
+            "timestamp": 1780000000000,
+            "pageUrl": "",
+            "properties": { "flagKey": "checkout-v2", "flagId": "flag_ab_1" },
+            "attributes": { "plan": "pro" }
+          }
+        ]
+      }
+    },
+    {
+      "case": "holdout_exposure_batch",
+      "endpoint": "collect.batch",
+      "path": "/v1/collect/batch",
+      "method": "POST",
+      "contentType": "application/json",
+      "description": "Same envelope and same item shape as an exposure batch. Only eventName and the properties block differ, so holdout analysis can separate held-out traffic.",
+      "envelope": {
+        "keyField": "sdkKey",
+        "keyAlternatives": ["sdkKey", "snippetKey"],
+        "arrayField": "events",
+        "minItems": 1,
+        "maxItems": 100
+      },
+      "item": {
+        "required": [
+          "eventId",
+          "visitorId",
+          "experimentId",
+          "variationId",
+          "eventName",
+          "revenue",
+          "timestamp",
+          "pageUrl"
+        ],
+        "optional": ["value", "properties", "attributes"],
+        "types": {
+          "eventId": "string",
+          "visitorId": "string",
+          "experimentId": "string",
+          "variationId": "string",
+          "eventName": "string",
+          "revenue": "number|null",
+          "value": "number|null",
+          "timestamp": "number",
+          "pageUrl": "string",
+          "properties": "object",
+          "attributes": "object<string,string>"
+        },
+        "notes": {
+          "experimentId": "The holdout id, not the flag id.",
+          "properties": "Carries flagKey, flagId, holdoutId, and holdoutKey."
+        }
+      },
+      "example": {
+        "sdkKey": "sdk_production_abc123",
+        "events": [
+          {
+            "eventId": "1c8b2f60-3a5e-4b2a-9d77-2f0a3c5e7d91",
+            "visitorId": "user_42",
+            "experimentId": "holdout_q2",
+            "variationId": "var_off",
+            "eventName": "flag_holdout_exposure",
+            "revenue": null,
+            "timestamp": 1780000000000,
+            "pageUrl": "",
+            "properties": {
+              "flagKey": "checkout-v2",
+              "flagId": "flag_ab_1",
+              "holdoutId": "holdout_q2",
+              "holdoutKey": "q2-2026-holdout"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "metric_batch",
+      "endpoint": "collect.metricBatch",
+      "path": "/v1/collect/metric-batch",
+      "method": "POST",
+      "contentType": "application/json",
+      "description": "Conversion and metric events. No experiment or variation: attribution happens server-side from the visitor's exposures.",
+      "envelope": {
+        "keyField": "sdkKey",
+        "keyAlternatives": ["sdkKey", "snippetKey"],
+        "arrayField": "metricEvents",
+        "minItems": 1,
+        "maxItems": 100
+      },
+      "item": {
+        "required": ["eventId", "visitorId", "eventName", "revenue", "timestamp", "pageUrl"],
+        "optional": ["value"],
+        "types": {
+          "eventId": "string",
+          "visitorId": "string",
+          "eventName": "string",
+          "revenue": "number|null",
+          "value": "number|null",
+          "timestamp": "number",
+          "pageUrl": "string"
+        },
+        "notes": {
+          "eventName": "The metric key as configured in the dashboard. An unknown key is accepted and stored, so a typo shows up as an empty metric rather than an error.",
+          "revenue": "Decimal major units, or null for a non-revenue conversion.",
+          "value": "Numeric metric value for average-value metrics. null when the metric is a count.",
+          "properties": "NOT part of this body. Unlike the exposure batch, the metric batch has no properties field: anything sent under that name is stripped before storage, so it would look delivered and be gone. Put the number in `value` instead."
+        }
+      },
+      "example": {
+        "sdkKey": "sdk_production_abc123",
+        "metricEvents": [
+          {
+            "eventId": "6b1f2c93-4d5a-4f2b-8a3e-7c9d0e1f2a34",
+            "visitorId": "user_42",
+            "eventName": "signup_completed",
+            "revenue": null,
+            "value": 1,
+            "timestamp": 1780000000000,
+            "pageUrl": ""
+          }
+        ]
+      }
+    },
+    {
+      "case": "orders_batch",
+      "endpoint": "collect.orders",
+      "path": "/v1/collect/orders",
+      "method": "POST",
+      "contentType": "application/json",
+      "description": "Purchases. Sent immediately rather than batched on a timer, because an order is the event a customer least wants buffered.",
+      "envelope": {
+        "keyField": "sdkKey",
+        "keyAlternatives": ["sdkKey", "snippetKey"],
+        "arrayField": "orders",
+        "minItems": 1,
+        "maxItems": 100
+      },
+      "item": {
+        "required": ["eventId", "visitorId", "orderId", "total", "timestamp"],
+        "optional": [
+          "currency",
+          "subtotal",
+          "shipping",
+          "tax",
+          "discount",
+          "coupon",
+          "test",
+          "items",
+          "pageUrl"
+        ],
+        "types": {
+          "eventId": "string",
+          "visitorId": "string",
+          "orderId": "string",
+          "total": "number",
+          "currency": "string",
+          "subtotal": "number",
+          "shipping": "number",
+          "tax": "number",
+          "discount": "number",
+          "coupon": "string",
+          "timestamp": "number",
+          "pageUrl": "string",
+          "test": "boolean",
+          "items": "array<object>"
+        },
+        "notes": {
+          "total": "Decimal major units as displayed, not minor units. Must be a finite number greater than zero: a zero or negative total is rejected.",
+          "test": "true stores the order but excludes it from every revenue, profit, recommendation, and audience calculation.",
+          "items": "Each item takes sku, and optionally productKey, name, price, quantity, and category.",
+          "pageUrl": "Accepted and ignored by the orders route, unlike the exposure and metric batches. Server SDKs may send an empty string."
+        }
+      },
+      "example": {
+        "sdkKey": "sdk_production_abc123",
+        "orders": [
+          {
+            "eventId": "9d2e7a10-5c6b-4a8f-b1c2-3d4e5f60718a",
+            "visitorId": "user_42",
+            "orderId": "ORD-1001",
+            "total": 99.95,
+            "currency": "USD",
+            "timestamp": 1780000000000,
+            "pageUrl": "",
+            "items": [{ "sku": "SKU-1", "price": 99.95, "quantity": 1 }]
+          }
+        ]
+      }
+    },
+    {
+      "case": "heartbeat",
+      "endpoint": "app.heartbeat",
+      "path": "/api/sdk/heartbeat",
+      "method": "POST",
+      "contentType": "application/json",
+      "description": "SDK liveness. Sent after a successful datafile fetch. Drives the Connected, Stale, and Not connected states on the Environments page, so an SDK that never sends one looks offline no matter how well it works.",
+      "envelope": {
+        "keyField": "sdkKey",
+        "keyAlternatives": ["sdkKey"],
+        "arrayField": null
+      },
+      "item": {
+        "required": ["sdkKey", "sdkType", "sdkVersion"],
+        "optional": [],
+        "types": {
+          "sdkKey": "string",
+          "sdkType": "string",
+          "sdkVersion": "string"
+        },
+        "notes": {
+          "sdkType": "The package identifier, exactly as published: @avsbhq/node, @avsbhq/browser, avsb-python, avsb-go, avsb-ruby, avsbhq/avsb, com.avsbhq:avsb-sdk, Avsb.SDK.",
+          "sdkVersion": "The package version, read from build metadata rather than a hand-maintained literal."
+        }
+      },
+      "example": {
+        "sdkKey": "sdk_production_abc123",
+        "sdkType": "@avsbhq/node",
+        "sdkVersion": "1.6.2"
+      }
+    }
+  ]
+}

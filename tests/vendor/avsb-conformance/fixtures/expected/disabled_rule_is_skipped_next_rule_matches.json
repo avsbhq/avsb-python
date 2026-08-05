@@ -1,0 +1,20 @@
+{
+  "case": "disabled_rule_is_skipped_next_rule_matches",
+  "family": "core",
+  "description": "A rule with enabled=false is skipped with a reason and the next rule in order serves.",
+  "datafile": "datafiles/disabled_rule_is_skipped_next_rule_matches.datafile.json",
+  "context": "contexts/disabled_rule_is_skipped_next_rule_matches.context.json",
+  "flagKey": "feature-with-disabled-rule",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "second-rule",
+    "variationKey": "second",
+    "source": "rule",
+    "ruleId": "rule_enabled_second",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_disabled_first\" skipped (disabled)",
+      "rule \"rule_enabled_second\" matched (targeted_delivery), serving variation \"second\""
+    ]
+  }
+}

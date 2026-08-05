@@ -1,0 +1,19 @@
+{
+  "case": "ab_test_bucket_deterministic_user_a",
+  "family": "core",
+  "description": "AB test produces a deterministic bucket per user.key, recorded so per-language hashes must match.",
+  "datafile": "datafiles/ab_test_bucket_deterministic_user_a.datafile.json",
+  "context": "contexts/ab_test_bucket_deterministic_user_a.context.json",
+  "flagKey": "checkout-v2-experiment",
+  "defaultValue": "fallback",
+  "expected": {
+    "value": "old",
+    "variationKey": "control",
+    "source": "rule",
+    "ruleId": "rule_ab_split",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_ab_split\" matched (ab_test), bucketed into variation \"control\" (hash 4336/5000)"
+    ]
+  }
+}

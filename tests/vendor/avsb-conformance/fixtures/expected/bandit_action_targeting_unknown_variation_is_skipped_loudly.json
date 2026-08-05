@@ -1,0 +1,20 @@
+{
+  "case": "bandit_action_targeting_unknown_variation_is_skipped_loudly",
+  "family": "bandit",
+  "description": "When the winning action points at a variation the flag does not carry, the rule is skipped with a reason naming the action and the variation, and evaluation continues.",
+  "datafile": "datafiles/bandit_action_targeting_unknown_variation_is_skipped_loudly.datafile.json",
+  "context": "contexts/bandit_action_targeting_unknown_variation_is_skipped_loudly.context.json",
+  "flagKey": "bandit-broken-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "control-copy",
+    "variationKey": "control",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_bandit_ghost_variation\" skipped (bandit \"rule_bandit_ghost_variation\" action \"action_ghost\" targets unknown variation \"var_deleted\")",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

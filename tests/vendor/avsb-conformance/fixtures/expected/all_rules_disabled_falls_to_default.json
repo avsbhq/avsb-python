@@ -1,0 +1,20 @@
+{
+  "case": "all_rules_disabled_falls_to_default",
+  "family": "core",
+  "description": "When every rule is disabled the flag serves its default variation with source=default.",
+  "datafile": "datafiles/all_rules_disabled_falls_to_default.datafile.json",
+  "context": "contexts/all_rules_disabled_falls_to_default.context.json",
+  "flagKey": "feature-all-rules-disabled",
+  "defaultValue": true,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_only_disabled\" skipped (disabled)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

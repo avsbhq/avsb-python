@@ -1,0 +1,19 @@
+{
+  "case": "disabled_flag_returns_default_variation_value",
+  "family": "core",
+  "description": "A disabled flag serves its default variation value with source=disabled.",
+  "datafile": "datafiles/disabled_flag_returns_default_variation_value.datafile.json",
+  "context": "contexts/disabled_flag_returns_default_variation_value.context.json",
+  "flagKey": "feature-off",
+  "defaultValue": true,
+  "expected": {
+    "value": false,
+    "variationKey": "control",
+    "source": "disabled",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "flag \"feature-off\" is disabled, returning default variation"
+    ]
+  }
+}

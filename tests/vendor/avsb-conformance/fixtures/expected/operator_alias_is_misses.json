@@ -1,0 +1,20 @@
+{
+  "case": "operator_alias_is_misses",
+  "family": "operator",
+  "description": "The `is` alias behaves exactly like `equals` on a CUSTOM_ATTRIBUTE condition. Non-matching context.",
+  "datafile": "datafiles/operator_alias_is_misses.datafile.json",
+  "context": "contexts/operator_alias_is_misses.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_operator\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

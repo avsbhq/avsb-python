@@ -1,0 +1,26 @@
+{
+  "case": "boundary_allocation_integer_10pct_bucket_below_threshold",
+  "family": "boundary",
+  "description": "Allocation bucket 999 is unambiguously inside a 0.1 rollout, anchoring the on-threshold case above.",
+  "datafile": "datafiles/boundary_allocation_integer_10pct_bucket_below_threshold.datafile.json",
+  "context": "contexts/boundary_allocation_integer_10pct_bucket_below_threshold.context.json",
+  "flagKey": "boundary-allocation-integer-10pct",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_alloc",
+    "bucket": 999,
+    "why": "One bucket below the threshold: inside under any reading.",
+    "resolvedKey": "alloc10-under-5397"
+  },
+  "expected": {
+    "value": "A",
+    "variationKey": "a",
+    "source": "rule",
+    "ruleId": "rule_alloc",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_alloc\" matched (ab_test), bucketed into variation \"a\" (hash 2972/5000)"
+    ]
+  }
+}

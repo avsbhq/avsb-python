@@ -1,0 +1,19 @@
+{
+  "case": "interaction_holdout_does_not_leak_to_sibling_flag",
+  "family": "interaction",
+  "description": "A holdout only affects the flags it lists. The sibling flag in the same datafile still serves its rule.",
+  "datafile": "datafiles/interaction_holdout_does_not_leak_to_sibling_flag.datafile.json",
+  "context": "contexts/interaction_holdout_does_not_leak_to_sibling_flag.context.json",
+  "flagKey": "interaction-sibling-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_b_full",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_b_full\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "case": "targeted_delivery_paid_user_matches",
+  "family": "core",
+  "description": "A user matching the paid audience receives the targeted variation with source=rule, ruleType=targeted_delivery.",
+  "datafile": "datafiles/targeted_delivery_paid_user_matches.datafile.json",
+  "context": "contexts/targeted_delivery_paid_user_matches.context.json",
+  "flagKey": "paid-only-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_paid",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_paid\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

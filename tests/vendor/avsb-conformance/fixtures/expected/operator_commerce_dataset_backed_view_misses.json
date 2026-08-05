@@ -1,0 +1,20 @@
+{
+  "case": "operator_commerce_dataset_backed_view_misses",
+  "family": "operator",
+  "description": "A PRODUCTS_VIEWED condition carrying a datasetSlug cannot be resolved server-side, so it evaluates false rather than matching all traffic.",
+  "datafile": "datafiles/operator_commerce_dataset_backed_view_misses.datafile.json",
+  "context": "contexts/operator_commerce_dataset_backed_view_misses.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_operator\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

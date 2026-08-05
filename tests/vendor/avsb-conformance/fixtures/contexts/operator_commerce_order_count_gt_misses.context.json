@@ -1,0 +1,8 @@
+{
+  "kind": "user",
+  "key": "u_orders_miss",
+  "purchaseHistory": {
+    "hasPurchased": true,
+    "orderCount": 3
+  }
+}

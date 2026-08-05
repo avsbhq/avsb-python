@@ -1,0 +1,19 @@
+{
+  "case": "operator_alias_does_not_contain_matches",
+  "family": "operator",
+  "description": "The `does_not_contain` alias behaves like `not_contains`, case-insensitively. Matching context.",
+  "datafile": "datafiles/operator_alias_does_not_contain_matches.datafile.json",
+  "context": "contexts/operator_alias_does_not_contain_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

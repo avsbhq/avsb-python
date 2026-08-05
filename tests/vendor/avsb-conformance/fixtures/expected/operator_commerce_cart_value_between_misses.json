@@ -1,0 +1,20 @@
+{
+  "case": "operator_commerce_cart_value_between_misses",
+  "family": "operator",
+  "description": "CART_VALUE between is inclusive on both ends and converts both bounds from minor units. Non-matching context.",
+  "datafile": "datafiles/operator_commerce_cart_value_between_misses.datafile.json",
+  "context": "contexts/operator_commerce_cart_value_between_misses.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_operator\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

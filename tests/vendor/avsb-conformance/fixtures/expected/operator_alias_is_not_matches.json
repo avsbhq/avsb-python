@@ -1,0 +1,19 @@
+{
+  "case": "operator_alias_is_not_matches",
+  "family": "operator",
+  "description": "The `is_not` alias behaves exactly like `not_equals`. Matching context.",
+  "datafile": "datafiles/operator_alias_is_not_matches.datafile.json",
+  "context": "contexts/operator_alias_is_not_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

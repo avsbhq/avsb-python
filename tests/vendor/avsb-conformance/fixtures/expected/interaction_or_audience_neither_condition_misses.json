@@ -1,0 +1,20 @@
+{
+  "case": "interaction_or_audience_neither_condition_misses",
+  "family": "interaction",
+  "description": "An OR audience group rejects a context that satisfies neither condition.",
+  "datafile": "datafiles/interaction_or_audience_neither_condition_misses.datafile.json",
+  "context": "contexts/interaction_or_audience_neither_condition_misses.context.json",
+  "flagKey": "interaction-or-audience",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_or\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

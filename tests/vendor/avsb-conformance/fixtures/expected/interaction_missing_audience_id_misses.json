@@ -1,0 +1,20 @@
+{
+  "case": "interaction_missing_audience_id_misses",
+  "family": "interaction",
+  "description": "A rule referencing an audience id absent from the datafile fails closed: the rule is skipped rather than admitting everyone.",
+  "datafile": "datafiles/interaction_missing_audience_id_misses.datafile.json",
+  "context": "contexts/interaction_missing_audience_id_misses.context.json",
+  "flagKey": "interaction-missing-audience",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_ghost_audience\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

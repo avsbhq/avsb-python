@@ -1,0 +1,19 @@
+{
+  "case": "interaction_holdout_without_named_variation_serves_flag_default",
+  "family": "interaction",
+  "description": "When a holdout names no variation for this flag, held-out contexts get the flag defaultVariationId, not the caller default.",
+  "datafile": "datafiles/interaction_holdout_without_named_variation_serves_flag_default.datafile.json",
+  "context": "contexts/interaction_holdout_without_named_variation_serves_flag_default.context.json",
+  "flagKey": "interaction-held-out-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "flag-default",
+    "variationKey": "flag-default",
+    "source": "holdout",
+    "ruleId": "holdout_no_variation",
+    "ruleType": "holdout",
+    "reasons": [
+      "held out by holdout \"interaction-holdout-no-variation\", serving default variation \"flag-default\""
+    ]
+  }
+}

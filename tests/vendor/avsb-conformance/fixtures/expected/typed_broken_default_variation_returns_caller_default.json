@@ -1,0 +1,19 @@
+{
+  "case": "typed_broken_default_variation_returns_caller_default",
+  "family": "typed",
+  "description": "When defaultVariationId matches no variation, the caller default is returned with variationKey null and source=default.",
+  "datafile": "datafiles/typed_broken_default_variation_returns_caller_default.datafile.json",
+  "context": "contexts/typed_broken_default_variation_returns_caller_default.context.json",
+  "flagKey": "typed-broken-default-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "caller-default",
+    "variationKey": null,
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "no rules matched, returning default variation"
+    ]
+  }
+}

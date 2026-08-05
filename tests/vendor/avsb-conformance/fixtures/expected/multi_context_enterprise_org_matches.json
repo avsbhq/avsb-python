@@ -1,0 +1,19 @@
+{
+  "case": "multi_context_enterprise_org_matches",
+  "family": "core",
+  "description": "A multi-context request with organization.tier=enterprise matches the organization-keyed audience.",
+  "datafile": "datafiles/multi_context_enterprise_org_matches.datafile.json",
+  "context": "contexts/multi_context_enterprise_org_matches.context.json",
+  "flagKey": "org-enterprise-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_enterprise_orgs",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_enterprise_orgs\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

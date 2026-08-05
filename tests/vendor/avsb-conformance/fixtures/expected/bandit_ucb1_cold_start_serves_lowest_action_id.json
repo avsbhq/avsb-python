@@ -1,0 +1,19 @@
+{
+  "case": "bandit_ucb1_cold_start_serves_lowest_action_id",
+  "family": "bandit",
+  "description": "A bandit rule with an inline ucb1 config dispatches through the bandit engine: source=bandit, ruleType=bandit, ruleId is the rule id, and the cold-start policy serves the lowest action id (action_a_bold), not the first declared action.",
+  "datafile": "datafiles/bandit_ucb1_cold_start_serves_lowest_action_id.datafile.json",
+  "context": "contexts/bandit_ucb1_cold_start_serves_lowest_action_id.context.json",
+  "flagKey": "bandit-inline-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "bold-copy",
+    "variationKey": "bold",
+    "source": "bandit",
+    "ruleId": "rule_bandit_ucb1",
+    "ruleType": "bandit",
+    "reasons": [
+      "rule \"rule_bandit_ucb1\" matched (bandit \"rule_bandit_ucb1\"), served action \"action_a_bold\" into variation \"bold\""
+    ]
+  }
+}

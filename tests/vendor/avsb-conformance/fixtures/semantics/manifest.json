@@ -1,0 +1,197 @@
+{
+  "schema": "../../schema.semantics.json",
+  "family": "semantics",
+  "contract": "SDK and API DX overhaul spec, section 1.4 (evaluation semantics locks) with the not_ready source from section 1.2",
+  "authoredByHand": true,
+  "note": "The generated corpus locks what the EVALUATOR decides from a datafile. This family locks the semantics that live above it: what isEnabled() and exists() answer, which source strings are legal, what not_ready means, and the sticky-bucket pipeline every server SDK wires at the client layer. None of it can be expressed as a datafile plus a context, so none of it can be generated: it is hand-authored and every SDK asserts against it directly.",
+
+  "sources": {
+    "public": [
+      "datafileOverride",
+      "runtimeOverride",
+      "sticky",
+      "rule",
+      "holdout",
+      "bandit",
+      "default",
+      "not_found",
+      "disabled",
+      "not_ready"
+    ],
+    "decided": [
+      "rule",
+      "holdout",
+      "bandit",
+      "runtimeOverride",
+      "datafileOverride",
+      "sticky"
+    ],
+    "banned": [
+      "override",
+      "runtime_override",
+      "not_started",
+      "not_initialized",
+      "uninitialized",
+      "error"
+    ],
+    "notes": {
+      "decided": "The six sources that mean a real decision produced this value. Everything outside this list is a fallback.",
+      "banned": "Spellings that must never reach a customer. `override` and `runtime_override` are the internal evaluator enum only, mapped at the SDK boundary; the rest are invented not-ready spellings that must all become `not_ready`.",
+      "not_ready": "Distinct from not_found: not_ready means there was no datafile to look in. Reporting not_found for an uninitialised SDK is the bug section 1.2 closes, and it was present in every language port."
+    }
+  },
+
+  "truthiness": {
+    "rule": "isEnabled() needs a definition of truthy that does not vary by language. The reference is the TypeScript engine, so the JavaScript rule is the contract: false, 0, -0, NaN, empty string, null and undefined are falsy, and EVERYTHING else is truthy. Ports must implement this rule, not their own language's. Ruby and PHP differ most: Ruby treats 0 and the empty string as true, PHP treats the string \"0\" as false.",
+    "falsy": [
+      { "value": false, "why": "The boolean flag that is off." },
+      { "value": 0, "why": "A number flag at zero. Ruby would call this truthy." },
+      { "value": "", "why": "An empty string flag. Ruby would call this truthy." },
+      { "value": null, "why": "An explicit JSON null variation value." }
+    ],
+    "truthy": [
+      { "value": true, "why": "The boolean flag that is on." },
+      { "value": 1, "why": "Any non-zero number, including negatives." },
+      { "value": -1, "why": "Negative numbers are truthy." },
+      { "value": "off", "why": "A non-empty string, whatever it says." },
+      { "value": "false", "why": "The STRING false is truthy. Do not parse it." },
+      { "value": "0", "why": "The STRING zero is truthy. PHP would call this falsy." },
+      { "value": [], "why": "An empty array is truthy. Python would call this falsy." },
+      { "value": {}, "why": "An empty object is truthy. Python would call this falsy." }
+    ]
+  },
+
+  "isEnabled": {
+    "rule": "true when source is in sources.decided AND the value is truthy per the truthiness contract above. false otherwise, with no exceptions.",
+    "cases": [
+      { "case": "enabled_rule_truthy", "source": "rule", "value": true, "expected": true },
+      { "case": "enabled_rule_falsy", "source": "rule", "value": false, "expected": false },
+      { "case": "enabled_holdout_truthy", "source": "holdout", "value": true, "expected": true },
+      { "case": "enabled_holdout_falsy", "source": "holdout", "value": false, "expected": false },
+      { "case": "enabled_bandit_truthy", "source": "bandit", "value": "bold-copy", "expected": true },
+      { "case": "enabled_bandit_falsy", "source": "bandit", "value": "", "expected": false },
+      { "case": "enabled_runtime_override_truthy", "source": "runtimeOverride", "value": true, "expected": true },
+      { "case": "enabled_runtime_override_falsy", "source": "runtimeOverride", "value": 0, "expected": false },
+      { "case": "enabled_datafile_override_truthy", "source": "datafileOverride", "value": "forced-on", "expected": true },
+      { "case": "enabled_datafile_override_falsy", "source": "datafileOverride", "value": null, "expected": false },
+      { "case": "enabled_sticky_truthy", "source": "sticky", "value": true, "expected": true },
+      { "case": "enabled_sticky_falsy", "source": "sticky", "value": false, "expected": false },
+      { "case": "enabled_default_truthy_value", "source": "default", "value": true, "expected": false },
+      { "case": "enabled_not_found_truthy_value", "source": "not_found", "value": true, "expected": false },
+      { "case": "enabled_disabled_truthy_value", "source": "disabled", "value": true, "expected": false },
+      { "case": "enabled_not_ready_truthy_value", "source": "not_ready", "value": true, "expected": false }
+    ],
+    "notes": {
+      "enabled_default_truthy_value": "The trap that made Python and Go disagree: a flag serving its default variation is NOT enabled, however truthy the default is. Go counted only `rule` and Python counted six sources; both were wrong about at least one row of this table.",
+      "enabled_not_ready_truthy_value": "An uninitialised SDK never reports a feature as enabled, even when the caller's default value is true."
+    }
+  },
+
+  "exists": {
+    "rule": "false when source is not_found or not_ready, true for every other source.",
+    "cases": [
+      { "case": "exists_rule", "source": "rule", "expected": true },
+      { "case": "exists_default", "source": "default", "expected": true },
+      { "case": "exists_disabled", "source": "disabled", "expected": true },
+      { "case": "exists_not_found", "source": "not_found", "expected": false },
+      { "case": "exists_not_ready", "source": "not_ready", "expected": false }
+    ],
+    "notes": {
+      "exists_disabled": "A disabled flag exists. The customer turned it off; that is not the same as it being absent.",
+      "exists_not_ready": "With no datafile loaded, whether the key exists is unknowable, so the honest answer is false rather than a guess."
+    }
+  },
+
+  "notReady": {
+    "rule": "Evaluating any flag before a datafile exists returns the caller's default value with source not_ready, variationKey null, ruleId null, ruleType null, and one reason naming the state.",
+    "triggers": [
+      "init() / on_ready() has not completed yet",
+      "the datafile fetch failed and no bootstrap datafile was supplied",
+      "the client was closed or disposed"
+    ],
+    "expected": {
+      "source": "not_ready",
+      "variationKey": null,
+      "ruleId": null,
+      "ruleType": null,
+      "isEnabled": false,
+      "exists": false,
+      "valueIs": "the caller's default value, unchanged and with its type intact"
+    },
+    "notes": {
+      "reason": "The reason string must say the SDK is not ready and what to await or call, not merely that the flag was not found. Wording is per-SDK; the source value is not."
+    }
+  },
+
+  "sticky": {
+    "rule": "Sticky bucketing is wired at the CLIENT layer, not inside the evaluator, exactly as @avsbhq/node does it. The evaluator stays a pure function of datafile plus context.",
+    "pipeline": [
+      { "step": 1, "name": "runtimeOverride", "layer": "client" },
+      { "step": 2, "name": "sticky lookup", "layer": "client" },
+      { "step": 3, "name": "datafileOverride", "layer": "evaluator" },
+      { "step": 4, "name": "holdout", "layer": "evaluator" },
+      { "step": 5, "name": "rules in declared order", "layer": "evaluator" },
+      { "step": 6, "name": "flag default variation", "layer": "evaluator" }
+    ],
+    "lookup": {
+      "signature": "lookup(userId, flagKey) -> assignment | null",
+      "onHit": "Return immediately with source=sticky, and with ruleId and ruleType copied from the stored assignment. Do not call the evaluator.",
+      "onMiss": "Continue to the evaluator. A miss is normal, not an error.",
+      "onUnknownVariation": "When the stored variationId is not among the flag's current variations, treat the lookup as a MISS and continue to the evaluator. The variation was deleted; serving it is impossible.",
+      "onOrphanedRule": "When the stored variationId still exists but its ruleId no longer matches the datafile, still serve the sticky value, and additionally log a warning and emit the stickyOrphan event. Suppress the exposure event for that evaluation, because the rule it would be attributed to is gone."
+    },
+    "save": {
+      "signature": "save(userId, flagKey, assignment) -> void, fire and forget",
+      "when": "ONLY when the evaluator returned source=rule AND ruleType=ab_test AND a variation was served.",
+      "neverWhen": [
+        "ruleType=targeted_delivery, which is a rollout and not an assignment",
+        "source=holdout",
+        "source=datafileOverride or runtimeOverride",
+        "source=default, disabled, not_found or not_ready"
+      ],
+      "assignment": {
+        "variationId": "The variation's ID. NOT its key. Saving the key corrupts the store, because lookup resolves by id and will never match again (this was the .NET bug in report 04 section 5.22).",
+        "ruleId": "The id of the ab_test rule that assigned it.",
+        "ruleType": "ab_test",
+        "assignedAt": "Milliseconds since the Unix epoch, as a number."
+      }
+    },
+    "cases": [
+      { "case": "sticky_hit_returns_stored_variation", "given": "lookup returns an assignment whose variationId exists on the flag", "expect": "source=sticky, ruleId and ruleType from the assignment, evaluator not consulted" },
+      { "case": "sticky_miss_falls_through_to_evaluator", "given": "lookup returns null", "expect": "the evaluator's own answer, unchanged" },
+      { "case": "sticky_unknown_variation_falls_through", "given": "lookup returns an assignment whose variationId was deleted from the flag", "expect": "the evaluator's own answer, unchanged" },
+      { "case": "sticky_saves_on_ab_test_only", "given": "the evaluator returned source=rule with ruleType=ab_test", "expect": "exactly one save call, carrying the variation ID" },
+      { "case": "sticky_does_not_save_on_targeted_delivery", "given": "the evaluator returned source=rule with ruleType=targeted_delivery", "expect": "no save call" },
+      { "case": "sticky_does_not_save_on_holdout", "given": "the evaluator returned source=holdout", "expect": "no save call" },
+      { "case": "sticky_does_not_save_on_default", "given": "the evaluator returned source=default", "expect": "no save call" }
+    ]
+  },
+
+  "reasons": {
+    "rule": "The generated corpus records the reason array, so every conformance harness runs with reasons ON and compares them exactly, in order.",
+    "portOption": "A port may gate reason collection behind an option for production callers, but its conformance harness must switch the option on. Go's harness already does this (IncludeReasons: true).",
+    "agentDefault": "The agent leaves reasons on by default, because a caller debugging without them is the most common support question."
+  },
+
+  "clientLayerContracts": [
+    {
+      "name": "empty-context warn-once",
+      "spec": "section 1.2",
+      "rule": "Evaluating with an empty context key warns ONCE PER PROCESS, naming the exact factory call to add.",
+      "assertedBy": "Each SDK's own unit tests. NOT this corpus: warnings are not part of the evaluation result, and no fixture format can capture 'logged exactly once for the lifetime of the process'.",
+      "corpusRelated": "The generated case edge_empty_context_key_buckets_deterministically locks what the VALUE is in that situation."
+    },
+    {
+      "name": "SDK key shape validation",
+      "spec": "section 1.2",
+      "rule": "Every SDK validates the key shape sdk_<envKey>_<id> at construction, logs an actionable message on a mismatch, and proceeds anyway.",
+      "assertedBy": "Each SDK's own unit tests. The corpus datafiles all carry a real-shaped key so a validating port never warns on a fixture."
+    },
+    {
+      "name": "default logger",
+      "spec": "section 1.2",
+      "rule": "Console transport at warn level in development, noop in production builds.",
+      "assertedBy": "Each SDK's own unit tests."
+    }
+  ]
+}

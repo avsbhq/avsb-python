@@ -1,0 +1,8 @@
+{
+  "kind": "user",
+  "key": "u_recency_hit",
+  "purchaseHistory": {
+    "hasPurchased": true,
+    "lastPurchaseAt": 0
+  }
+}

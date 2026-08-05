@@ -1,0 +1,20 @@
+{
+  "case": "multi_context_startup_org_misses",
+  "family": "core",
+  "description": "A multi-context request with organization.tier=startup misses the enterprise audience and falls through to the default variation.",
+  "datafile": "datafiles/multi_context_startup_org_misses.datafile.json",
+  "context": "contexts/multi_context_startup_org_misses.context.json",
+  "flagKey": "org-enterprise-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_enterprise_orgs\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

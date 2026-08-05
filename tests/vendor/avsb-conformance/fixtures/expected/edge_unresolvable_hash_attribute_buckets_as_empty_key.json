@@ -1,0 +1,19 @@
+{
+  "case": "edge_unresolvable_hash_attribute_buckets_as_empty_key",
+  "family": "edge",
+  "description": "A hashAttribute naming an absent context kind resolves to the empty string and buckets identically to an empty key, rather than throwing or skipping the rule.",
+  "datafile": "datafiles/edge_unresolvable_hash_attribute_buckets_as_empty_key.datafile.json",
+  "context": "contexts/edge_unresolvable_hash_attribute_buckets_as_empty_key.context.json",
+  "flagKey": "edge-unresolvable-hash-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "treatment",
+    "variationKey": "treatment",
+    "source": "rule",
+    "ruleId": "rule_device_hash",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_device_hash\" matched (ab_test), bucketed into variation \"treatment\" (hash 6956/10000)"
+    ]
+  }
+}

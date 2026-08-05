@@ -1,0 +1,20 @@
+{
+  "case": "edge_unknown_rule_type_is_skipped_next_rule_serves",
+  "family": "edge",
+  "description": "A rule whose type this SDK version does not know is skipped with a reason naming the type, and evaluation continues to the next rule. Forward compatibility with a newer platform, without silence.",
+  "datafile": "datafiles/edge_unknown_rule_type_is_skipped_next_rule_serves.datafile.json",
+  "context": "contexts/edge_unknown_rule_type_is_skipped_next_rule_serves.context.json",
+  "flagKey": "edge-unknown-rule-type-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_known_fallback",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_from_the_future\" skipped (unsupported rule type \"multi_armed_rollout\")",
+      "rule \"rule_known_fallback\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

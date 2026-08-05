@@ -1,0 +1,475 @@
+{
+  "schema": "../schema.json",
+  "generatedFrom": {
+    "package": "@avsbhq/core",
+    "version": "1.4.0"
+  },
+  "families": {
+    "core": 12,
+    "typed": 5,
+    "edge": 5,
+    "operator": 24,
+    "boundary": 11,
+    "interaction": 11,
+    "bandit": 8
+  },
+  "caseCount": 76,
+  "cases": [
+    {
+      "case": "flag_not_found_returns_default",
+      "family": "core",
+      "description": "Requesting a flag key not present in the datafile returns the default with source=not_found.",
+      "expected": "expected/flag_not_found_returns_default.json"
+    },
+    {
+      "case": "disabled_flag_returns_default_variation_value",
+      "family": "core",
+      "description": "A disabled flag serves its default variation value with source=disabled.",
+      "expected": "expected/disabled_flag_returns_default_variation_value.json"
+    },
+    {
+      "case": "user_override_wins_over_rules",
+      "family": "core",
+      "description": "An explicit user override returns the override variation with source=datafileOverride.",
+      "expected": "expected/user_override_wins_over_rules.json"
+    },
+    {
+      "case": "targeted_delivery_paid_user_matches",
+      "family": "core",
+      "description": "A user matching the paid audience receives the targeted variation with source=rule, ruleType=targeted_delivery.",
+      "expected": "expected/targeted_delivery_paid_user_matches.json"
+    },
+    {
+      "case": "targeted_delivery_free_user_misses_falls_to_default",
+      "family": "core",
+      "description": "A user outside the paid audience misses the rule and serves the default variation with source=default.",
+      "expected": "expected/targeted_delivery_free_user_misses_falls_to_default.json"
+    },
+    {
+      "case": "ab_test_bucket_deterministic_user_a",
+      "family": "core",
+      "description": "AB test produces a deterministic bucket per user.key, recorded so per-language hashes must match.",
+      "expected": "expected/ab_test_bucket_deterministic_user_a.json"
+    },
+    {
+      "case": "ab_test_bucket_deterministic_user_b",
+      "family": "core",
+      "description": "Second deterministic AB bucket, different user key, recorded outcome.",
+      "expected": "expected/ab_test_bucket_deterministic_user_b.json"
+    },
+    {
+      "case": "holdout_excludes_user_serves_holdout_variation",
+      "family": "core",
+      "description": "A user landing inside a 99.9% holdout window is served the holdout default variation with source=holdout, ruleType=holdout.",
+      "expected": "expected/holdout_excludes_user_serves_holdout_variation.json"
+    },
+    {
+      "case": "multi_context_enterprise_org_matches",
+      "family": "core",
+      "description": "A multi-context request with organization.tier=enterprise matches the organization-keyed audience.",
+      "expected": "expected/multi_context_enterprise_org_matches.json"
+    },
+    {
+      "case": "multi_context_startup_org_misses",
+      "family": "core",
+      "description": "A multi-context request with organization.tier=startup misses the enterprise audience and falls through to the default variation.",
+      "expected": "expected/multi_context_startup_org_misses.json"
+    },
+    {
+      "case": "disabled_rule_is_skipped_next_rule_matches",
+      "family": "core",
+      "description": "A rule with enabled=false is skipped with a reason and the next rule in order serves.",
+      "expected": "expected/disabled_rule_is_skipped_next_rule_matches.json"
+    },
+    {
+      "case": "all_rules_disabled_falls_to_default",
+      "family": "core",
+      "description": "When every rule is disabled the flag serves its default variation with source=default.",
+      "expected": "expected/all_rules_disabled_falls_to_default.json"
+    },
+    {
+      "case": "typed_number_variation_value_preserved",
+      "family": "typed",
+      "description": "A number flag returns the exact numeric variation value, fraction and sign included, not a string and not a rounded integer.",
+      "expected": "expected/typed_number_variation_value_preserved.json"
+    },
+    {
+      "case": "typed_number_not_found_returns_caller_default_number",
+      "family": "typed",
+      "description": "A missing number flag returns the caller default with its numeric type intact.",
+      "expected": "expected/typed_number_not_found_returns_caller_default_number.json"
+    },
+    {
+      "case": "typed_json_object_variation_value_preserved",
+      "family": "typed",
+      "description": "A json flag returns the whole nested document: booleans, numbers, arrays, nested objects, and an explicit null.",
+      "expected": "expected/typed_json_object_variation_value_preserved.json"
+    },
+    {
+      "case": "typed_json_array_variation_value_preserved",
+      "family": "typed",
+      "description": "A json flag whose variation value is a mixed array returns the array, element order and element types preserved.",
+      "expected": "expected/typed_json_array_variation_value_preserved.json"
+    },
+    {
+      "case": "typed_broken_default_variation_returns_caller_default",
+      "family": "typed",
+      "description": "When defaultVariationId matches no variation, the caller default is returned with variationKey null and source=default.",
+      "expected": "expected/typed_broken_default_variation_returns_caller_default.json"
+    },
+    {
+      "case": "edge_empty_context_key_buckets_deterministically",
+      "family": "edge",
+      "description": "An empty context key still evaluates, and every empty-key context lands in the same bucket. That is the footgun behind silently corrupted experiments, so the value is recorded rather than left undefined. Client layers warn once per process about it (spec §1.2).",
+      "expected": "expected/edge_empty_context_key_buckets_deterministically.json"
+    },
+    {
+      "case": "edge_unresolvable_hash_attribute_buckets_as_empty_key",
+      "family": "edge",
+      "description": "A hashAttribute naming an absent context kind resolves to the empty string and buckets identically to an empty key, rather than throwing or skipping the rule.",
+      "expected": "expected/edge_unresolvable_hash_attribute_buckets_as_empty_key.json"
+    },
+    {
+      "case": "edge_unresolvable_hash_attribute_matches_empty_key_bucket",
+      "family": "edge",
+      "description": "The same flag with an explicitly empty device key must land on the same variation as the absent-kind case above: both bucket on the empty string.",
+      "expected": "expected/edge_unresolvable_hash_attribute_matches_empty_key_bucket.json"
+    },
+    {
+      "case": "edge_rule_with_no_variations_is_skipped",
+      "family": "edge",
+      "description": "A targeted_delivery rule with an empty variations list cannot serve anything, so it is skipped and the flag falls through to its default.",
+      "expected": "expected/edge_rule_with_no_variations_is_skipped.json"
+    },
+    {
+      "case": "edge_unknown_rule_type_is_skipped_next_rule_serves",
+      "family": "edge",
+      "description": "A rule whose type this SDK version does not know is skipped with a reason naming the type, and evaluation continues to the next rule. Forward compatibility with a newer platform, without silence.",
+      "expected": "expected/edge_unknown_rule_type_is_skipped_next_rule_serves.json"
+    },
+    {
+      "case": "operator_alias_is_matches",
+      "family": "operator",
+      "description": "The `is` alias behaves exactly like `equals` on a CUSTOM_ATTRIBUTE condition. Matching context.",
+      "expected": "expected/operator_alias_is_matches.json"
+    },
+    {
+      "case": "operator_alias_is_misses",
+      "family": "operator",
+      "description": "The `is` alias behaves exactly like `equals` on a CUSTOM_ATTRIBUTE condition. Non-matching context.",
+      "expected": "expected/operator_alias_is_misses.json"
+    },
+    {
+      "case": "operator_alias_is_not_matches",
+      "family": "operator",
+      "description": "The `is_not` alias behaves exactly like `not_equals`. Matching context.",
+      "expected": "expected/operator_alias_is_not_matches.json"
+    },
+    {
+      "case": "operator_alias_is_not_misses",
+      "family": "operator",
+      "description": "The `is_not` alias behaves exactly like `not_equals`. Non-matching context.",
+      "expected": "expected/operator_alias_is_not_misses.json"
+    },
+    {
+      "case": "operator_alias_does_not_contain_matches",
+      "family": "operator",
+      "description": "The `does_not_contain` alias behaves like `not_contains`, case-insensitively. Matching context.",
+      "expected": "expected/operator_alias_does_not_contain_matches.json"
+    },
+    {
+      "case": "operator_alias_does_not_contain_misses",
+      "family": "operator",
+      "description": "The `does_not_contain` alias behaves like `not_contains`, case-insensitively. Non-matching context.",
+      "expected": "expected/operator_alias_does_not_contain_misses.json"
+    },
+    {
+      "case": "operator_alias_does_not_exist_matches",
+      "family": "operator",
+      "description": "The `does_not_exist` alias behaves like `not_exists`: it matches when the attribute is absent. Matching context.",
+      "expected": "expected/operator_alias_does_not_exist_matches.json"
+    },
+    {
+      "case": "operator_alias_does_not_exist_misses",
+      "family": "operator",
+      "description": "The `does_not_exist` alias behaves like `not_exists`: it matches when the attribute is absent. Non-matching context.",
+      "expected": "expected/operator_alias_does_not_exist_misses.json"
+    },
+    {
+      "case": "operator_commerce_viewed_any_matches",
+      "family": "operator",
+      "description": "PRODUCTS_VIEWED viewed_any matches when any listed SKU is in the caller-supplied viewedSkus list. Matching context.",
+      "expected": "expected/operator_commerce_viewed_any_matches.json"
+    },
+    {
+      "case": "operator_commerce_viewed_any_misses",
+      "family": "operator",
+      "description": "PRODUCTS_VIEWED viewed_any matches when any listed SKU is in the caller-supplied viewedSkus list. Non-matching context.",
+      "expected": "expected/operator_commerce_viewed_any_misses.json"
+    },
+    {
+      "case": "operator_commerce_has_purchased_matches",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY has_purchased reads the hasPurchased flag on the purchaseHistory attribute. Matching context.",
+      "expected": "expected/operator_commerce_has_purchased_matches.json"
+    },
+    {
+      "case": "operator_commerce_has_purchased_misses",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY has_purchased reads the hasPurchased flag on the purchaseHistory attribute. Non-matching context.",
+      "expected": "expected/operator_commerce_has_purchased_misses.json"
+    },
+    {
+      "case": "operator_commerce_lifetime_spend_gt_matches",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY lifetime_spend_gt compares major-unit lifetimeSpend against a minor-unit condition value (25000 minor = 250.00 major at exponent 2). Matching context.",
+      "expected": "expected/operator_commerce_lifetime_spend_gt_matches.json"
+    },
+    {
+      "case": "operator_commerce_lifetime_spend_gt_misses",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY lifetime_spend_gt compares major-unit lifetimeSpend against a minor-unit condition value (25000 minor = 250.00 major at exponent 2). Non-matching context.",
+      "expected": "expected/operator_commerce_lifetime_spend_gt_misses.json"
+    },
+    {
+      "case": "operator_commerce_order_count_gt_matches",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY order_count_gt is strictly greater-than on orderCount. Matching context.",
+      "expected": "expected/operator_commerce_order_count_gt_matches.json"
+    },
+    {
+      "case": "operator_commerce_order_count_gt_misses",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY order_count_gt is strictly greater-than on orderCount. Non-matching context.",
+      "expected": "expected/operator_commerce_order_count_gt_misses.json"
+    },
+    {
+      "case": "operator_commerce_cart_value_between_matches",
+      "family": "operator",
+      "description": "CART_VALUE between is inclusive on both ends and converts both bounds from minor units. Matching context.",
+      "expected": "expected/operator_commerce_cart_value_between_matches.json"
+    },
+    {
+      "case": "operator_commerce_cart_value_between_misses",
+      "family": "operator",
+      "description": "CART_VALUE between is inclusive on both ends and converts both bounds from minor units. Non-matching context.",
+      "expected": "expected/operator_commerce_cart_value_between_misses.json"
+    },
+    {
+      "case": "operator_commerce_zero_exponent_currency_matches",
+      "family": "operator",
+      "description": "With currencyExponent 0 (a zero-decimal currency such as JPY) the minor-unit condition value IS the major-unit amount, so 25000 means 25000, not 250. Matching context.",
+      "expected": "expected/operator_commerce_zero_exponent_currency_matches.json"
+    },
+    {
+      "case": "operator_commerce_zero_exponent_currency_misses",
+      "family": "operator",
+      "description": "With currencyExponent 0 (a zero-decimal currency such as JPY) the minor-unit condition value IS the major-unit amount, so 25000 means 25000, not 250. Non-matching context.",
+      "expected": "expected/operator_commerce_zero_exponent_currency_misses.json"
+    },
+    {
+      "case": "operator_commerce_last_purchase_older_than_matches",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY last_purchase_older_than compares lastPurchaseAt against now minus the declared days. Timestamps are pinned to 1970 and 2100 so the answer never drifts with the clock. Matching context.",
+      "expected": "expected/operator_commerce_last_purchase_older_than_matches.json"
+    },
+    {
+      "case": "operator_commerce_last_purchase_older_than_misses",
+      "family": "operator",
+      "description": "PURCHASE_HISTORY last_purchase_older_than compares lastPurchaseAt against now minus the declared days. Timestamps are pinned to 1970 and 2100 so the answer never drifts with the clock. Non-matching context.",
+      "expected": "expected/operator_commerce_last_purchase_older_than_misses.json"
+    },
+    {
+      "case": "operator_commerce_absent_purchase_history_misses",
+      "family": "operator",
+      "description": "A completely absent purchaseHistory attribute makes every PURCHASE_HISTORY operator false, INCLUDING has_not_purchased: on the server, absence means \"not provided\", not \"never purchased\".",
+      "expected": "expected/operator_commerce_absent_purchase_history_misses.json"
+    },
+    {
+      "case": "operator_commerce_dataset_backed_view_misses",
+      "family": "operator",
+      "description": "A PRODUCTS_VIEWED condition carrying a datasetSlug cannot be resolved server-side, so it evaluates false rather than matching all traffic.",
+      "expected": "expected/operator_commerce_dataset_backed_view_misses.json"
+    },
+    {
+      "case": "boundary_allocation_fractional_bucket_below_threshold",
+      "family": "boundary",
+      "description": "A 0.12345 rollout puts the threshold at 1234.5. Allocation bucket 1234 is below it and is inside the rollout. A port that floors the threshold to 1234 excludes this context, so this is the case that catches truncated threshold math.",
+      "expected": "expected/boundary_allocation_fractional_bucket_below_threshold.json"
+    },
+    {
+      "case": "boundary_allocation_fractional_bucket_above_threshold",
+      "family": "boundary",
+      "description": "Allocation bucket 1235 is above the 1234.5 threshold, so the rule is skipped and the flag serves its default variation. Proves the rule really can be skipped, so the case above is not vacuous.",
+      "expected": "expected/boundary_allocation_fractional_bucket_above_threshold.json"
+    },
+    {
+      "case": "boundary_allocation_integer_10pct_bucket_on_threshold",
+      "family": "boundary",
+      "description": "Allocation bucket 1000 against a 0.1 rollout, the exact pair report 04 section 5.7 named as diverging between Go and everyone else. Which side of the threshold it lands on is whatever the double multiply produces; every port must produce the same side as the reference.",
+      "expected": "expected/boundary_allocation_integer_10pct_bucket_on_threshold.json"
+    },
+    {
+      "case": "boundary_allocation_integer_10pct_bucket_below_threshold",
+      "family": "boundary",
+      "description": "Allocation bucket 999 is unambiguously inside a 0.1 rollout, anchoring the on-threshold case above.",
+      "expected": "expected/boundary_allocation_integer_10pct_bucket_below_threshold.json"
+    },
+    {
+      "case": "boundary_allocation_integer_10pct_bucket_above_threshold",
+      "family": "boundary",
+      "description": "Allocation bucket 1001 is unambiguously outside a 0.1 rollout, so the flag serves its default variation.",
+      "expected": "expected/boundary_allocation_integer_10pct_bucket_above_threshold.json"
+    },
+    {
+      "case": "boundary_allocation_integer_333pct_bucket_on_threshold",
+      "family": "boundary",
+      "description": "Allocation bucket 3330 against a 0.333 rollout: the second allocation report 04 section 5.7 names, with a different float-error direction from 0.1.",
+      "expected": "expected/boundary_allocation_integer_333pct_bucket_on_threshold.json"
+    },
+    {
+      "case": "boundary_split_fractional_bucket_below_first_boundary",
+      "family": "boundary",
+      "description": "A first variation at 0.12345 puts the first cumulative boundary at 1234.5. Assignment bucket 1234 is below it and serves variation a. A port that floors the cumulative total to 1234 serves variation b instead, changing the variation a real visitor sees.",
+      "expected": "expected/boundary_split_fractional_bucket_below_first_boundary.json"
+    },
+    {
+      "case": "boundary_split_fractional_bucket_above_first_boundary",
+      "family": "boundary",
+      "description": "Assignment bucket 1235 is above the 1234.5 cumulative boundary and serves variation b, proving the walk really advances.",
+      "expected": "expected/boundary_split_fractional_bucket_above_first_boundary.json"
+    },
+    {
+      "case": "boundary_split_thirds_bucket_on_first_boundary",
+      "family": "boundary",
+      "description": "Assignment bucket 3333 against a 0.3333 / 0.3333 / 0.3334 split. Which variation wins depends on how the cumulative sum rounds; the requirement is that every port rounds the same way the reference does.",
+      "expected": "expected/boundary_split_thirds_bucket_on_first_boundary.json"
+    },
+    {
+      "case": "boundary_split_thirds_bucket_minimum",
+      "family": "boundary",
+      "description": "Assignment bucket 0, the minimum, serves the first declared variation. A walk that starts comparing at 1 fails here.",
+      "expected": "expected/boundary_split_thirds_bucket_minimum.json"
+    },
+    {
+      "case": "boundary_split_thirds_bucket_maximum",
+      "family": "boundary",
+      "description": "Assignment bucket 9999, the maximum, serves the last declared variation. A port that buckets modulo 10000 but compares against percentages scaled to 100 falls out of the walk here and serves the flag default instead.",
+      "expected": "expected/boundary_split_thirds_bucket_maximum.json"
+    },
+    {
+      "case": "interaction_override_beats_full_holdout",
+      "family": "interaction",
+      "description": "A datafile override wins over a 100% holdout: an override is explicit operator intent, and it is checked before the holdout.",
+      "expected": "expected/interaction_override_beats_full_holdout.json"
+    },
+    {
+      "case": "interaction_holdout_beats_full_rollout_rule",
+      "family": "interaction",
+      "description": "A 100% holdout wins over a fully rolled-out rule: source=holdout, ruleId is the holdout id, ruleType=holdout.",
+      "expected": "expected/interaction_holdout_beats_full_rollout_rule.json"
+    },
+    {
+      "case": "interaction_holdout_does_not_leak_to_sibling_flag",
+      "family": "interaction",
+      "description": "A holdout only affects the flags it lists. The sibling flag in the same datafile still serves its rule.",
+      "expected": "expected/interaction_holdout_does_not_leak_to_sibling_flag.json"
+    },
+    {
+      "case": "interaction_zero_allocation_holdout_lets_rules_run",
+      "family": "interaction",
+      "description": "A holdout at 0% allocation holds nobody out, so the rule serves normally.",
+      "expected": "expected/interaction_zero_allocation_holdout_lets_rules_run.json"
+    },
+    {
+      "case": "interaction_holdout_without_named_variation_serves_flag_default",
+      "family": "interaction",
+      "description": "When a holdout names no variation for this flag, held-out contexts get the flag defaultVariationId, not the caller default.",
+      "expected": "expected/interaction_holdout_without_named_variation_serves_flag_default.json"
+    },
+    {
+      "case": "interaction_rule_order_first_match_wins",
+      "family": "interaction",
+      "description": "Two rules both match; the first in declaration order serves and the second is never reached.",
+      "expected": "expected/interaction_rule_order_first_match_wins.json"
+    },
+    {
+      "case": "interaction_or_audience_second_condition_matches",
+      "family": "interaction",
+      "description": "An OR audience group admits a context that satisfies only the second condition.",
+      "expected": "expected/interaction_or_audience_second_condition_matches.json"
+    },
+    {
+      "case": "interaction_or_audience_neither_condition_misses",
+      "family": "interaction",
+      "description": "An OR audience group rejects a context that satisfies neither condition.",
+      "expected": "expected/interaction_or_audience_neither_condition_misses.json"
+    },
+    {
+      "case": "interaction_missing_audience_id_misses",
+      "family": "interaction",
+      "description": "A rule referencing an audience id absent from the datafile fails closed: the rule is skipped rather than admitting everyone.",
+      "expected": "expected/interaction_missing_audience_id_misses.json"
+    },
+    {
+      "case": "interaction_absent_context_kind_misses",
+      "family": "interaction",
+      "description": "A condition scoped to contextKind=organization does not match when the request carries no organization sub-context. A missing KIND is a hard no-match, which is not the same as a missing ATTRIBUTE: does_not_exist would otherwise match.",
+      "expected": "expected/interaction_absent_context_kind_misses.json"
+    },
+    {
+      "case": "interaction_present_context_kind_without_attribute_matches",
+      "family": "interaction",
+      "description": "The same condition matches when the organization sub-context exists but carries no tier attribute, proving the previous case fails on the KIND and not the attribute.",
+      "expected": "expected/interaction_present_context_kind_without_attribute_matches.json"
+    },
+    {
+      "case": "bandit_ucb1_cold_start_serves_lowest_action_id",
+      "family": "bandit",
+      "description": "A bandit rule with an inline ucb1 config dispatches through the bandit engine: source=bandit, ruleType=bandit, ruleId is the rule id, and the cold-start policy serves the lowest action id (action_a_bold), not the first declared action.",
+      "expected": "expected/bandit_ucb1_cold_start_serves_lowest_action_id.json"
+    },
+    {
+      "case": "bandit_epsilon_greedy_cold_start_dispatches",
+      "family": "bandit",
+      "description": "A bandit rule with an inline epsilon-greedy config (exploration off) dispatches and serves the highest-mean action, which under cold start is the lowest action id.",
+      "expected": "expected/bandit_epsilon_greedy_cold_start_dispatches.json"
+    },
+    {
+      "case": "bandit_shared_bandit_resolved_through_bandit_id",
+      "family": "bandit",
+      "description": "A rule carrying banditId joins to datafile.bandits, and the resolved entry key (not the rule id) is the bandit key the decision is attributed to.",
+      "expected": "expected/bandit_shared_bandit_resolved_through_bandit_id.json"
+    },
+    {
+      "case": "bandit_missing_config_is_skipped_loudly",
+      "family": "bandit",
+      "description": "A bandit-typed rule with neither an inline config nor a banditId is skipped with a reason naming the rule. It must never silently behave as \"no rules matched\" (spec §1.2 silent-drop ban).",
+      "expected": "expected/bandit_missing_config_is_skipped_loudly.json"
+    },
+    {
+      "case": "bandit_unresolvable_bandit_id_is_skipped_loudly",
+      "family": "bandit",
+      "description": "A banditId that is not present in datafile.bandits is skipped with a reason naming the id.",
+      "expected": "expected/bandit_unresolvable_bandit_id_is_skipped_loudly.json"
+    },
+    {
+      "case": "bandit_action_targeting_unknown_variation_is_skipped_loudly",
+      "family": "bandit",
+      "description": "When the winning action points at a variation the flag does not carry, the rule is skipped with a reason naming the action and the variation, and evaluation continues.",
+      "expected": "expected/bandit_action_targeting_unknown_variation_is_skipped_loudly.json"
+    },
+    {
+      "case": "bandit_rule_disabled_is_skipped_before_dispatch",
+      "family": "bandit",
+      "description": "A disabled bandit rule is skipped by the enablement check, with the same reason any disabled rule produces, and never reaches the bandit engine.",
+      "expected": "expected/bandit_rule_disabled_is_skipped_before_dispatch.json"
+    },
+    {
+      "case": "bandit_no_actions_is_skipped_loudly",
+      "family": "bandit",
+      "description": "A bandit config declaring an empty actions list is skipped with a reason naming the bandit key.",
+      "expected": "expected/bandit_no_actions_is_skipped_loudly.json"
+    }
+  ]
+}

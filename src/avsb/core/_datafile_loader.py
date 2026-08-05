@@ -1,15 +1,20 @@
 """
-Internal JSON → FlagDatafile deserialiser.
+Internal JSON to FlagDatafile deserialiser.
 
-Called by the SDK's datafile fetcher and by test utilities.  Not part of the
-public API.
+The single place camelCase wire names become snake_case Python fields.
+Called by the SDK's datafile fetcher and by the test utilities. Not part of
+the public API: import :class:`avsb.FlagDatafile` for the type, not this.
+
+Unknown wire fields are ignored on purpose. The publisher may add a field
+before this SDK version knows about it, and a strict parser would turn that
+into a total outage instead of a no-op.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from .types import (
+from .datafile_types import (
     BanditAction,
     BanditConfig,
     Condition,
@@ -17,7 +22,6 @@ from .types import (
     FlagDatafile,
     FlagDatafileAudience,
     FlagDatafileBandit,
-    FlagDatafileBigSegmentRef,
     FlagDatafileEntry,
     FlagDatafileHoldout,
     FlagDatafileOverride,
@@ -38,6 +42,8 @@ def _parse_condition(raw: dict[str, Any]) -> Condition | ConditionGroup:
         value=raw.get("value", ""),
         attribute=raw.get("attribute"),
         context_kind=raw.get("contextKind"),
+        match=raw.get("match"),
+        dataset_slug=raw.get("datasetSlug"),
     )
 
 
@@ -92,6 +98,7 @@ def _parse_rule(raw: dict[str, Any]) -> FlagDatafileRule:
         variations=[_parse_variation_allocation(v) for v in raw.get("variations", [])],
         holdout_id=raw.get("holdoutId"),
         bandit=_parse_bandit_config(bandit_raw) if bandit_raw else None,
+        bandit_id=raw.get("banditId"),
     )
 
 
@@ -133,13 +140,6 @@ def _parse_bandit_datafile_entry(raw: dict[str, Any]) -> FlagDatafileBandit:
     )
 
 
-def _parse_big_segment_ref(raw: dict[str, Any]) -> FlagDatafileBigSegmentRef:
-    return FlagDatafileBigSegmentRef(
-        segment_key=raw["segmentKey"],
-        context_kind=raw.get("contextKind", "user"),
-    )
-
-
 def _parse_registered_attribute(raw: Any) -> RegisteredAttribute:
     if isinstance(raw, str):
         return RegisteredAttribute(key=raw, type="string")
@@ -150,8 +150,21 @@ def _parse_registered_attribute(raw: Any) -> RegisteredAttribute:
     )
 
 
+def _parse_currency_exponent(raw: Any) -> int | None:
+    """Accept a non-negative integer exponent, else fall back to the default.
+
+    A malformed value must not make every money condition throw; the
+    audience evaluator treats ``None`` as the documented default of 2.
+    """
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int) and raw >= 0:
+        return raw
+    return None
+
+
 def parse_datafile(raw: dict[str, Any]) -> FlagDatafile:
-    """Deserialise a raw JSON dict into a FlagDatafile dataclass tree."""
+    """Deserialise a raw datafile dict into a :class:`FlagDatafile` tree."""
     return FlagDatafile(
         version=int(raw.get("version", 1)),
         project_type=raw.get("projectType", "FEATURE_FLAG"),
@@ -160,11 +173,12 @@ def parse_datafile(raw: dict[str, Any]) -> FlagDatafile:
         published_at=raw.get("publishedAt", ""),
         collect_endpoint=raw.get("collectEndpoint", ""),
         heartbeat_endpoint=raw.get("heartbeatEndpoint"),
+        stream_endpoint=raw.get("streamEndpoint"),
+        currency_exponent=_parse_currency_exponent(raw.get("currencyExponent")),
         flags=[_parse_flag_entry(f) for f in raw.get("flags", [])],
         audiences=[_parse_audience(a) for a in raw.get("audiences", [])],
         holdouts=[_parse_holdout(h) for h in raw.get("holdouts", [])],
         bandits=[_parse_bandit_datafile_entry(b) for b in raw.get("bandits", [])],
-        big_segments=[_parse_big_segment_ref(s) for s in raw.get("bigSegments", [])],
         registered_attributes=[
             _parse_registered_attribute(r)
             for r in raw.get("registeredAttributes", [])

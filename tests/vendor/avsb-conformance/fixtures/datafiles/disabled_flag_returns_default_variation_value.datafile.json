@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "projectType": "FEATURE_FLAG",
+  "sdkKey": "sdk_production_conformancefixture01",
+  "environmentKey": "production",
+  "publishedAt": "2026-05-29T00:00:00.000Z",
+  "collectEndpoint": "https://ingest.avsb.cloud",
+  "heartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat",
+  "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+  "flags": [
+    {
+      "type": "boolean",
+      "enabled": false,
+      "defaultVariationId": "var_control",
+      "variations": [
+        {
+          "id": "var_control",
+          "key": "control",
+          "value": false
+        },
+        {
+          "id": "var_treatment",
+          "key": "treatment",
+          "value": true
+        }
+      ],
+      "overrides": [],
+      "rules": [],
+      "id": "flag_disabled_1",
+      "key": "feature-off"
+    }
+  ],
+  "audiences": []
+}

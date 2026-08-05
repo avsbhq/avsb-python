@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "projectType": "FEATURE_FLAG",
+  "sdkKey": "sdk_production_conformancefixture01",
+  "environmentKey": "production",
+  "publishedAt": "2026-05-29T00:00:00.000Z",
+  "collectEndpoint": "https://ingest.avsb.cloud",
+  "heartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat",
+  "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+  "flags": [
+    {
+      "type": "boolean",
+      "enabled": true,
+      "defaultVariationId": "var_off",
+      "variations": [
+        {
+          "id": "var_off",
+          "key": "off",
+          "value": false
+        },
+        {
+          "id": "var_on",
+          "key": "on",
+          "value": true
+        }
+      ],
+      "overrides": [],
+      "rules": [
+        {
+          "enabled": true,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": null,
+          "variations": [
+            {
+              "variationId": "var_on",
+              "percentage": 1
+            }
+          ],
+          "id": "rule_full_rollout",
+          "type": "targeted_delivery"
+        }
+      ],
+      "id": "flag_holdout_target",
+      "key": "feature-with-holdout"
+    }
+  ],
+  "audiences": [],
+  "holdouts": [
+    {
+      "trafficAllocation": 0.999,
+      "hashAttribute": "user.key",
+      "defaultVariationByFlag": {
+        "flag_holdout_target": "var_off"
+      },
+      "id": "holdout_q2",
+      "key": "q2-2026-holdout",
+      "flagIds": [
+        "flag_holdout_target"
+      ]
+    }
+  ]
+}

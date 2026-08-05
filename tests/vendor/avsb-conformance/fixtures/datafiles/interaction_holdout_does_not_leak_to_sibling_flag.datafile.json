@@ -1,0 +1,104 @@
+{
+  "version": 2,
+  "projectType": "FEATURE_FLAG",
+  "sdkKey": "sdk_production_conformancefixture01",
+  "environmentKey": "production",
+  "publishedAt": "2026-05-29T00:00:00.000Z",
+  "collectEndpoint": "https://ingest.avsb.cloud",
+  "heartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat",
+  "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+  "flags": [
+    {
+      "type": "boolean",
+      "enabled": true,
+      "defaultVariationId": "var_off",
+      "variations": [
+        {
+          "id": "var_off",
+          "key": "off",
+          "value": false
+        },
+        {
+          "id": "var_on",
+          "key": "on",
+          "value": true
+        }
+      ],
+      "overrides": [
+        {
+          "userId": "user_forced",
+          "variationId": "var_on"
+        }
+      ],
+      "rules": [
+        {
+          "enabled": true,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": null,
+          "variations": [
+            {
+              "variationId": "var_on",
+              "percentage": 1
+            }
+          ],
+          "id": "rule_a_full",
+          "type": "targeted_delivery"
+        }
+      ],
+      "id": "flag_interaction_a",
+      "key": "interaction-held-out-feature"
+    },
+    {
+      "type": "boolean",
+      "enabled": true,
+      "defaultVariationId": "var_off",
+      "variations": [
+        {
+          "id": "var_off",
+          "key": "off",
+          "value": false
+        },
+        {
+          "id": "var_on",
+          "key": "on",
+          "value": true
+        }
+      ],
+      "overrides": [],
+      "rules": [
+        {
+          "enabled": true,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": null,
+          "variations": [
+            {
+              "variationId": "var_on",
+              "percentage": 1
+            }
+          ],
+          "id": "rule_b_full",
+          "type": "targeted_delivery"
+        }
+      ],
+      "id": "flag_interaction_b",
+      "key": "interaction-sibling-feature"
+    }
+  ],
+  "audiences": [],
+  "holdouts": [
+    {
+      "trafficAllocation": 1,
+      "hashAttribute": "user.key",
+      "defaultVariationByFlag": {
+        "flag_interaction_a": "var_off"
+      },
+      "id": "holdout_interaction",
+      "key": "interaction-holdout",
+      "flagIds": [
+        "flag_interaction_a"
+      ]
+    }
+  ]
+}

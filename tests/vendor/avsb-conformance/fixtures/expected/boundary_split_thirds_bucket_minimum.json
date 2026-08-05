@@ -1,0 +1,26 @@
+{
+  "case": "boundary_split_thirds_bucket_minimum",
+  "family": "boundary",
+  "description": "Assignment bucket 0, the minimum, serves the first declared variation. A walk that starts comparing at 1 fails here.",
+  "datafile": "datafiles/boundary_split_thirds_bucket_minimum.datafile.json",
+  "context": "contexts/boundary_split_thirds_bucket_minimum.context.json",
+  "flagKey": "boundary-split-thirds",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "assignment",
+    "ruleId": "rule_split",
+    "bucket": 0,
+    "why": "Locks the bottom of the bucket range.",
+    "resolvedKey": "thirds-min-3877"
+  },
+  "expected": {
+    "value": "A",
+    "variationKey": "a",
+    "source": "rule",
+    "ruleId": "rule_split",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_split\" matched (ab_test), bucketed into variation \"a\" (hash 0/3333)"
+    ]
+  }
+}

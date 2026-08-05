@@ -1,0 +1,19 @@
+{
+  "case": "typed_number_variation_value_preserved",
+  "family": "typed",
+  "description": "A number flag returns the exact numeric variation value, fraction and sign included, not a string and not a rounded integer.",
+  "datafile": "datafiles/typed_number_variation_value_preserved.datafile.json",
+  "context": "contexts/typed_number_variation_value_preserved.context.json",
+  "flagKey": "typed-number-feature",
+  "defaultValue": 0,
+  "expected": {
+    "value": -2.5,
+    "variationKey": "tuned",
+    "source": "rule",
+    "ruleId": "rule_number",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_number\" matched (targeted_delivery), serving variation \"tuned\""
+    ]
+  }
+}

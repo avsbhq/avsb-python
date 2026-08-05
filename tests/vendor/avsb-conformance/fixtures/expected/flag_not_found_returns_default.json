@@ -1,0 +1,19 @@
+{
+  "case": "flag_not_found_returns_default",
+  "family": "core",
+  "description": "Requesting a flag key not present in the datafile returns the default with source=not_found.",
+  "datafile": "datafiles/flag_not_found_returns_default.datafile.json",
+  "context": "contexts/flag_not_found_returns_default.context.json",
+  "flagKey": "does-not-exist",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": null,
+    "source": "not_found",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "flag \"does-not-exist\" not found in datafile"
+    ]
+  }
+}

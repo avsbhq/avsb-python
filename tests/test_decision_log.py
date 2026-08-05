@@ -114,3 +114,61 @@ class TestDecisionLogCollector:
         # After flush the collector is empty.
         log2 = collector.snapshot()
         assert len(log2.entries) == 0
+
+
+class TestDecisionLogBound:
+    """It used to grow forever: a slow memory leak installed by default."""
+
+    def test_the_collector_keeps_only_the_most_recent_entries(self):
+        collector = DecisionLogCollector(limit=3)
+        ctx = _user("u")
+        for index in range(6):
+            collector.record(f"flag-{index}", _flag(), ctx)
+
+        log = collector.snapshot()
+        assert [entry.flag_key for entry in log.entries] == [
+            "flag-3",
+            "flag-4",
+            "flag-5",
+        ]
+
+    def test_the_dropped_count_says_the_log_is_incomplete(self):
+        collector = DecisionLogCollector(limit=2)
+        for index in range(5):
+            collector.record(f"flag-{index}", _flag(), _user("u"))
+        assert collector.snapshot().dropped == 3
+
+    def test_dropping_warns_once_and_names_the_fix(self):
+        messages: list[str] = []
+
+        class Logger:
+            def debug(self, message, data=None):
+                pass
+
+            def info(self, message, data=None):
+                pass
+
+            def warn(self, message, data=None):
+                messages.append(message)
+
+            def error(self, message, data=None):
+                pass
+
+        collector = DecisionLogCollector(limit=1, logger=Logger())
+        for index in range(5):
+            collector.record(f"flag-{index}", _flag(), _user("u"))
+
+        assert len(messages) == 1
+        assert "flush_decision_log()" in messages[0]
+        assert "decision_log_limit" in messages[0]
+
+    def test_flush_resets_the_dropped_count_and_the_warning(self):
+        collector = DecisionLogCollector(limit=1)
+        for index in range(3):
+            collector.record(f"flag-{index}", _flag(), _user("u"))
+        assert collector.flush().dropped == 2
+        assert collector.snapshot().dropped == 0
+
+    def test_the_default_limit_is_generous_enough_to_be_invisible(self):
+        collector = DecisionLogCollector()
+        assert collector.limit >= 10_000

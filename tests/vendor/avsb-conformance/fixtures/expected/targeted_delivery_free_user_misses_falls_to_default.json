@@ -1,0 +1,20 @@
+{
+  "case": "targeted_delivery_free_user_misses_falls_to_default",
+  "family": "core",
+  "description": "A user outside the paid audience misses the rule and serves the default variation with source=default.",
+  "datafile": "datafiles/targeted_delivery_free_user_misses_falls_to_default.datafile.json",
+  "context": "contexts/targeted_delivery_free_user_misses_falls_to_default.context.json",
+  "flagKey": "paid-only-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_paid\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

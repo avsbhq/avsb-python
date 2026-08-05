@@ -1,0 +1,26 @@
+{
+  "case": "boundary_allocation_fractional_bucket_below_threshold",
+  "family": "boundary",
+  "description": "A 0.12345 rollout puts the threshold at 1234.5. Allocation bucket 1234 is below it and is inside the rollout. A port that floors the threshold to 1234 excludes this context, so this is the case that catches truncated threshold math.",
+  "datafile": "datafiles/boundary_allocation_fractional_bucket_below_threshold.datafile.json",
+  "context": "contexts/boundary_allocation_fractional_bucket_below_threshold.context.json",
+  "flagKey": "boundary-allocation-fractional",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_alloc",
+    "bucket": 1234,
+    "why": "Half a bucket below a fractional threshold: inside under the float comparison, outside under a floored one. Immune to floating-point dust.",
+    "resolvedKey": "alloc-frac-in-15653"
+  },
+  "expected": {
+    "value": "A",
+    "variationKey": "a",
+    "source": "rule",
+    "ruleId": "rule_alloc",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_alloc\" matched (ab_test), bucketed into variation \"a\" (hash 2431/5000)"
+    ]
+  }
+}

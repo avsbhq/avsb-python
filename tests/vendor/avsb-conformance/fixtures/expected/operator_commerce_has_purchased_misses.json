@@ -1,0 +1,20 @@
+{
+  "case": "operator_commerce_has_purchased_misses",
+  "family": "operator",
+  "description": "PURCHASE_HISTORY has_purchased reads the hasPurchased flag on the purchaseHistory attribute. Non-matching context.",
+  "datafile": "datafiles/operator_commerce_has_purchased_misses.datafile.json",
+  "context": "contexts/operator_commerce_has_purchased_misses.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_operator\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

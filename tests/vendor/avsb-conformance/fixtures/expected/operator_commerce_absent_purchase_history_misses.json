@@ -1,0 +1,20 @@
+{
+  "case": "operator_commerce_absent_purchase_history_misses",
+  "family": "operator",
+  "description": "A completely absent purchaseHistory attribute makes every PURCHASE_HISTORY operator false, INCLUDING has_not_purchased: on the server, absence means \"not provided\", not \"never purchased\".",
+  "datafile": "datafiles/operator_commerce_absent_purchase_history_misses.datafile.json",
+  "context": "contexts/operator_commerce_absent_purchase_history_misses.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_operator\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

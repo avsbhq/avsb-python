@@ -1,0 +1,19 @@
+{
+  "case": "interaction_or_audience_second_condition_matches",
+  "family": "interaction",
+  "description": "An OR audience group admits a context that satisfies only the second condition.",
+  "datafile": "datafiles/interaction_or_audience_second_condition_matches.datafile.json",
+  "context": "contexts/interaction_or_audience_second_condition_matches.context.json",
+  "flagKey": "interaction-or-audience",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_or",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_or\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

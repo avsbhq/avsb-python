@@ -1,56 +1,51 @@
 """
-FastAPI / Starlette middleware: attaches AvsbServer to each request state.
+FastAPI and Starlette integration.
 
-Requires: pip install avsb[fastapi]
-
-Usage::
+``AvsbFastApiMiddleware`` is :class:`avsb.middleware.asgi.AvsbAsgiMiddleware`
+under a name that matches how FastAPI users look for it, wired for
+``app.add_middleware``::
 
     from fastapi import FastAPI, Request
-    from avsb import AvsbServer
+    from avsb import AvsbServer, SingleContext
     from avsb.middleware.fastapi import AvsbFastApiMiddleware
 
     app = FastAPI()
-    server = AvsbServer(sdk_key="...")
+    server = AvsbServer(sdk_key=os.environ["AVSB_SDK_KEY"])
+
+    @app.on_event("startup")
+    def start_avsb() -> None:
+        server.on_ready()
+
+    @app.on_event("shutdown")
+    def stop_avsb() -> None:
+        server.close()
+
     app.add_middleware(AvsbFastApiMiddleware, server=server)
 
-The server is available as ``request.state.avsb`` inside route handlers.
+    @app.get("/checkout")
+    async def checkout(request: Request) -> dict[str, bool]:
+        ctx = SingleContext.user(key=request.headers["x-user-id"])
+        return {
+            "new_checkout": request.state.avsb.get_bool_flag(
+                "checkout-v2", False, ctx
+            )
+        }
+
+There is deliberately no ``server_factory`` option. A client per request would
+create a polling thread and an event-flush thread per request; one client for
+the process is the only correct shape, and the middleware takes the one you
+built.
+
+Starlette's ``add_middleware`` passes the wrapped app positionally and
+everything else as keywords, which is exactly this constructor's shape, so no
+adapter is needed.
 """
 
 from __future__ import annotations
 
-from typing import Any, Callable, Awaitable
+from .asgi import AvsbAsgiMiddleware
 
+#: FastAPI-flavoured alias. Identical behaviour, discoverable name.
+AvsbFastApiMiddleware = AvsbAsgiMiddleware
 
-class AvsbFastApiMiddleware:
-    """
-    Starlette-compatible middleware for FastAPI.
-
-    Attaches the AvsbServer to ``request.state.avsb`` on every HTTP request.
-    """
-
-    def __init__(self, app: Any, server: Any) -> None:
-        try:
-            from starlette.middleware.base import BaseHTTPMiddleware  # noqa: F401
-        except ImportError as exc:
-            raise ImportError(
-                "fastapi (and starlette) are required.  Install with: pip install avsb[fastapi]"
-            ) from exc
-        self.app = app
-        self.server = server
-
-    async def __call__(
-        self,
-        scope: dict[str, Any],
-        receive: Callable,
-        send: Callable,
-    ) -> None:
-        if scope.get("type") == "http":
-            scope.setdefault("state", {})  # type: ignore[call-overload]
-            if isinstance(scope.get("state"), dict):
-                scope["state"]["avsb"] = self.server
-            else:
-                try:
-                    scope["state"].avsb = self.server  # type: ignore[attr-defined]
-                except AttributeError:
-                    pass
-        await self.app(scope, receive, send)
+__all__ = ["AvsbFastApiMiddleware"]

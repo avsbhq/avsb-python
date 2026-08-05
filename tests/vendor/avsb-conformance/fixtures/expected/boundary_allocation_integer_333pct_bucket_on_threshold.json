@@ -1,0 +1,27 @@
+{
+  "case": "boundary_allocation_integer_333pct_bucket_on_threshold",
+  "family": "boundary",
+  "description": "Allocation bucket 3330 against a 0.333 rollout: the second allocation report 04 section 5.7 names, with a different float-error direction from 0.1.",
+  "datafile": "datafiles/boundary_allocation_integer_333pct_bucket_on_threshold.datafile.json",
+  "context": "contexts/boundary_allocation_integer_333pct_bucket_on_threshold.context.json",
+  "flagKey": "boundary-allocation-integer-333pct",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_alloc",
+    "bucket": 3330,
+    "why": "The 0.333 threshold bucket. Recorded, not predicted.",
+    "resolvedKey": "alloc333-exact-31153"
+  },
+  "expected": {
+    "value": "C",
+    "variationKey": "c",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_alloc\" excluded by traffic allocation (hash 3330 >= threshold 3330)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

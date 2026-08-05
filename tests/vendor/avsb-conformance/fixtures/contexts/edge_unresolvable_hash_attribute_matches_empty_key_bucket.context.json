@@ -1,0 +1,11 @@
+{
+  "kind": "multi",
+  "user": {
+    "kind": "user",
+    "key": "user_with_empty_device"
+  },
+  "device": {
+    "kind": "device",
+    "key": ""
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "case": "typed_json_array_variation_value_preserved",
+  "family": "typed",
+  "description": "A json flag whose variation value is a mixed array returns the array, element order and element types preserved.",
+  "datafile": "datafiles/typed_json_array_variation_value_preserved.datafile.json",
+  "context": "contexts/typed_json_array_variation_value_preserved.context.json",
+  "flagKey": "typed-json-array-feature",
+  "defaultValue": [],
+  "expected": {
+    "value": [
+      1,
+      "two",
+      false,
+      {
+        "k": "v"
+      }
+    ],
+    "variationKey": "list",
+    "source": "rule",
+    "ruleId": "rule_json_array",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_json_array\" matched (targeted_delivery), serving variation \"list\""
+    ]
+  }
+}

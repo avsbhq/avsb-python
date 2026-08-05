@@ -1,0 +1,27 @@
+{
+  "case": "boundary_allocation_fractional_bucket_above_threshold",
+  "family": "boundary",
+  "description": "Allocation bucket 1235 is above the 1234.5 threshold, so the rule is skipped and the flag serves its default variation. Proves the rule really can be skipped, so the case above is not vacuous.",
+  "datafile": "datafiles/boundary_allocation_fractional_bucket_above_threshold.datafile.json",
+  "context": "contexts/boundary_allocation_fractional_bucket_above_threshold.context.json",
+  "flagKey": "boundary-allocation-fractional",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_alloc",
+    "bucket": 1235,
+    "why": "Half a bucket above the same fractional threshold.",
+    "resolvedKey": "alloc-frac-out-4092"
+  },
+  "expected": {
+    "value": "C",
+    "variationKey": "c",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_alloc\" excluded by traffic allocation (hash 1235 >= threshold 1234.5)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

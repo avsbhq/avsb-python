@@ -1,0 +1,20 @@
+{
+  "case": "interaction_absent_context_kind_misses",
+  "family": "interaction",
+  "description": "A condition scoped to contextKind=organization does not match when the request carries no organization sub-context. A missing KIND is a hard no-match, which is not the same as a missing ATTRIBUTE: does_not_exist would otherwise match.",
+  "datafile": "datafiles/interaction_absent_context_kind_misses.datafile.json",
+  "context": "contexts/interaction_absent_context_kind_misses.context.json",
+  "flagKey": "interaction-kind-scoped",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_kind_scoped\" skipped (audience not matched)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

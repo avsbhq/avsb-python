@@ -1,0 +1,26 @@
+{
+  "case": "boundary_split_thirds_bucket_on_first_boundary",
+  "family": "boundary",
+  "description": "Assignment bucket 3333 against a 0.3333 / 0.3333 / 0.3334 split. Which variation wins depends on how the cumulative sum rounds; the requirement is that every port rounds the same way the reference does.",
+  "datafile": "datafiles/boundary_split_thirds_bucket_on_first_boundary.datafile.json",
+  "context": "contexts/boundary_split_thirds_bucket_on_first_boundary.context.json",
+  "flagKey": "boundary-split-thirds",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "assignment",
+    "ruleId": "rule_split",
+    "bucket": 3333,
+    "why": "The cumulative boundary of a repeating-decimal split, where the sum accumulates error across three additions.",
+    "resolvedKey": "thirds-exact-1906"
+  },
+  "expected": {
+    "value": "B",
+    "variationKey": "b",
+    "source": "rule",
+    "ruleId": "rule_split",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_split\" matched (ab_test), bucketed into variation \"b\" (hash 3333/6666)"
+    ]
+  }
+}

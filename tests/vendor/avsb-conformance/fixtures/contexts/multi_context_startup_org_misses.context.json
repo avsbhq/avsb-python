@@ -1,0 +1,12 @@
+{
+  "kind": "multi",
+  "user": {
+    "kind": "user",
+    "key": "user_888"
+  },
+  "organization": {
+    "kind": "organization",
+    "key": "org_startup",
+    "tier": "startup"
+  }
+}

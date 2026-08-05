@@ -10,10 +10,9 @@ default.  Pass ``ttl_seconds`` to expire assignments automatically.
 from __future__ import annotations
 
 import json
-import time
 from typing import Any
 
-from ..core.types import StickyAssignment, RuleType
+from ..core.types import StickyAssignment
 
 
 class RedisStickyBucketService:
@@ -35,10 +34,12 @@ class RedisStickyBucketService:
 
     def __init__(self, client: Any, ttl_seconds: int | None = None) -> None:
         try:
-            import redis as _redis_mod  # noqa: F401 — validate availability
+            import redis as _redis_mod  # noqa: F401 - availability check only
         except ImportError as exc:
             raise ImportError(
-                "redis is required.  Install it with: pip install avsb[redis]"
+                "The A vs B Redis sticky-bucket store needs the redis package, "
+                "which is an optional dependency. Install it with: pip install "
+                '"avsb[redis]".'
             ) from exc
         self._client = client
         self._ttl = ttl_seconds

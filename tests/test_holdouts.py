@@ -2,12 +2,9 @@
 Holdout evaluation tests.
 """
 
-from avsb.core.types import (
-    FlagDatafile,
-    FlagDatafileHoldout,
-    SingleContext,
-)
+from avsb.core.datafile_types import FlagDatafile, FlagDatafileHoldout
 from avsb.core.holdouts import evaluate_holdout
+from avsb.core.types import SingleContext
 from avsb.test_utils import InMemoryDatafileLoader, build_minimal_datafile
 
 

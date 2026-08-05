@@ -1,0 +1,19 @@
+{
+  "case": "operator_alias_does_not_exist_matches",
+  "family": "operator",
+  "description": "The `does_not_exist` alias behaves like `not_exists`: it matches when the attribute is absent. Matching context.",
+  "datafile": "datafiles/operator_alias_does_not_exist_matches.datafile.json",
+  "context": "contexts/operator_alias_does_not_exist_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

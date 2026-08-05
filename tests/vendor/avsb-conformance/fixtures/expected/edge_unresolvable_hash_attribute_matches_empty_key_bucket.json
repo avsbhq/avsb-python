@@ -1,0 +1,19 @@
+{
+  "case": "edge_unresolvable_hash_attribute_matches_empty_key_bucket",
+  "family": "edge",
+  "description": "The same flag with an explicitly empty device key must land on the same variation as the absent-kind case above: both bucket on the empty string.",
+  "datafile": "datafiles/edge_unresolvable_hash_attribute_matches_empty_key_bucket.datafile.json",
+  "context": "contexts/edge_unresolvable_hash_attribute_matches_empty_key_bucket.context.json",
+  "flagKey": "edge-unresolvable-hash-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "treatment",
+    "variationKey": "treatment",
+    "source": "rule",
+    "ruleId": "rule_device_hash",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_device_hash\" matched (ab_test), bucketed into variation \"treatment\" (hash 6956/10000)"
+    ]
+  }
+}

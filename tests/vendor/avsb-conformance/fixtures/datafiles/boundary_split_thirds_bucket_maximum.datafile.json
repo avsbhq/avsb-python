@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "projectType": "FEATURE_FLAG",
+  "sdkKey": "sdk_production_conformancefixture01",
+  "environmentKey": "production",
+  "publishedAt": "2026-05-29T00:00:00.000Z",
+  "collectEndpoint": "https://ingest.avsb.cloud",
+  "heartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat",
+  "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+  "flags": [
+    {
+      "type": "string",
+      "enabled": true,
+      "defaultVariationId": "var_c",
+      "variations": [
+        {
+          "id": "var_a",
+          "key": "a",
+          "value": "A"
+        },
+        {
+          "id": "var_b",
+          "key": "b",
+          "value": "B"
+        },
+        {
+          "id": "var_c",
+          "key": "c",
+          "value": "C"
+        }
+      ],
+      "overrides": [],
+      "rules": [
+        {
+          "enabled": true,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": 1,
+          "variations": [
+            {
+              "variationId": "var_a",
+              "percentage": 0.3333
+            },
+            {
+              "variationId": "var_b",
+              "percentage": 0.3333
+            },
+            {
+              "variationId": "var_c",
+              "percentage": 0.3334
+            }
+          ],
+          "id": "rule_split",
+          "type": "ab_test"
+        }
+      ],
+      "id": "flag_boundary_split",
+      "key": "boundary-split-thirds"
+    }
+  ],
+  "audiences": []
+}

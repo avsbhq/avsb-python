@@ -1,0 +1,19 @@
+{
+  "case": "operator_commerce_viewed_any_matches",
+  "family": "operator",
+  "description": "PRODUCTS_VIEWED viewed_any matches when any listed SKU is in the caller-supplied viewedSkus list. Matching context.",
+  "datafile": "datafiles/operator_commerce_viewed_any_matches.datafile.json",
+  "context": "contexts/operator_commerce_viewed_any_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

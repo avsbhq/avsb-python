@@ -1,0 +1,19 @@
+{
+  "case": "operator_alias_is_matches",
+  "family": "operator",
+  "description": "The `is` alias behaves exactly like `equals` on a CUSTOM_ATTRIBUTE condition. Matching context.",
+  "datafile": "datafiles/operator_alias_is_matches.datafile.json",
+  "context": "contexts/operator_alias_is_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

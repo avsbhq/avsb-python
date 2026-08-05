@@ -1,0 +1,19 @@
+{
+  "case": "bandit_shared_bandit_resolved_through_bandit_id",
+  "family": "bandit",
+  "description": "A rule carrying banditId joins to datafile.bandits, and the resolved entry key (not the rule id) is the bandit key the decision is attributed to.",
+  "datafile": "datafiles/bandit_shared_bandit_resolved_through_bandit_id.datafile.json",
+  "context": "contexts/bandit_shared_bandit_resolved_through_bandit_id.context.json",
+  "flagKey": "bandit-shared-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "bold-copy",
+    "variationKey": "bold",
+    "source": "bandit",
+    "ruleId": "rule_bandit_shared",
+    "ruleType": "bandit",
+    "reasons": [
+      "rule \"rule_bandit_shared\" matched (bandit \"checkout-copy-bandit\"), served action \"action_a_bold\" into variation \"bold\""
+    ]
+  }
+}

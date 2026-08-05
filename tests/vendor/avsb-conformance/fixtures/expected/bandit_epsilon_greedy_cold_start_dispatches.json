@@ -1,0 +1,19 @@
+{
+  "case": "bandit_epsilon_greedy_cold_start_dispatches",
+  "family": "bandit",
+  "description": "A bandit rule with an inline epsilon-greedy config (exploration off) dispatches and serves the highest-mean action, which under cold start is the lowest action id.",
+  "datafile": "datafiles/bandit_epsilon_greedy_cold_start_dispatches.datafile.json",
+  "context": "contexts/bandit_epsilon_greedy_cold_start_dispatches.context.json",
+  "flagKey": "bandit-inline-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "bold-copy",
+    "variationKey": "bold",
+    "source": "bandit",
+    "ruleId": "rule_bandit_eg",
+    "ruleType": "bandit",
+    "reasons": [
+      "rule \"rule_bandit_eg\" matched (bandit \"rule_bandit_eg\"), served action \"action_a_bold\" into variation \"bold\""
+    ]
+  }
+}

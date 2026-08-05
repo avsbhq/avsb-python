@@ -1,49 +1,45 @@
 """
-Multi-context helpers: Python port of packages/avsb-core/src/context.ts.
+Multi-context helpers: Python port of ``packages/avsb-core/src/context.ts``.
 
-All function names follow the Python naming convention (snake_case) but the
-semantics are an exact match to the TS originals.
+Function names are snake_case; the semantics are an exact match to the
+TypeScript originals.
 """
 
 from __future__ import annotations
 
-from .types import EvalContext, MultiContext, SingleContext
+from typing import Any
 
-_RESERVED_KEYS = frozenset({"kind", "key", "name", "_meta"})
+from .types import EvalContext, MultiContext, SingleContext
 
 
 def is_multi_context(ctx: EvalContext) -> bool:
-    """True when the context is a multi-context container (kind == 'multi')."""
+    """Is this a multi-context container?"""
     return isinstance(ctx, MultiContext)
 
 
 def get_context_by_kind(ctx: EvalContext, kind: str) -> SingleContext | None:
-    """
-    Extract a single context from a (possibly multi) EvalContext by kind.
-
-    Returns None when the requested kind is absent.
-    """
+    """Extract the sub-context of the given kind, or ``None`` when absent."""
     if isinstance(ctx, MultiContext):
         return ctx.contexts.get(kind)
-    # SingleContext — matches only when kinds align.
     return ctx if ctx.kind == kind else None
 
 
 def bucketing_key(ctx: EvalContext, kind: str = "user") -> str:
-    """
-    Return the bucketing key for the given context kind.
+    """Return the bucketing key for a context kind.
 
-    Falls back to the empty string so callers always receive a stable value.
+    Falls back to the empty string, so callers always get a stable value. An
+    empty key is a real bucketing input, not an error: everyone with an empty
+    key lands in the same bucket, which is why the client warns about it.
     """
     single = get_context_by_kind(ctx, kind)
     return single.key if single else ""
 
 
 def context_summary(ctx: EvalContext) -> list[dict[str, str]]:
-    """
-    Produce the kind/key summary stored in DecisionLogEntry.
+    """Summarise a context as kind and key pairs, for the decision log.
 
-    Attributes are intentionally omitted because they may carry PII.
+    Attributes are deliberately omitted: they may carry personal data, and a
+    decision log is something people paste into support threads.
     """
     if isinstance(ctx, MultiContext):
         return [{"kind": sub.kind, "key": sub.key} for sub in ctx.contexts.values()]
@@ -51,13 +47,12 @@ def context_summary(ctx: EvalContext) -> list[dict[str, str]]:
 
 
 def private_attributes_from(ctx: EvalContext) -> set[str]:
-    """Collect private-attribute redaction keys from all sub-contexts."""
+    """Collect the private-attribute names declared across all sub-contexts."""
     out: set[str] = set()
 
     def collect(sub: SingleContext) -> None:
         if sub._meta:
-            for key in sub._meta.private_attributes:
-                out.add(key)
+            out.update(sub._meta.private_attributes)
 
     if isinstance(ctx, MultiContext):
         for sub in ctx.contexts.values():
@@ -67,15 +62,13 @@ def private_attributes_from(ctx: EvalContext) -> set[str]:
     return out
 
 
-def eval_context_from_dict(raw: dict) -> EvalContext:
-    """
-    Deserialise a plain dict (e.g. from a JSON fixture) into an EvalContext.
+def eval_context_from_dict(raw: dict[str, Any]) -> EvalContext:
+    """Deserialise a plain dict into an :data:`EvalContext`.
 
-    Handles both SingleContext and MultiContext shapes.
+    Handles both the single and multi shapes: ``{"kind": "multi", ...}``
+    becomes a :class:`MultiContext`, anything else a
+    :class:`SingleContext`.
     """
-    from .types import SingleContext, MultiContext  # local re-import for clarity
-
-    kind = raw.get("kind", "user")
-    if kind == "multi":
+    if raw.get("kind") == "multi":
         return MultiContext.from_dict(raw)
     return SingleContext.from_dict(raw)

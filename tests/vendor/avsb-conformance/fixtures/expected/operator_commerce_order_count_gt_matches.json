@@ -1,0 +1,19 @@
+{
+  "case": "operator_commerce_order_count_gt_matches",
+  "family": "operator",
+  "description": "PURCHASE_HISTORY order_count_gt is strictly greater-than on orderCount. Matching context.",
+  "datafile": "datafiles/operator_commerce_order_count_gt_matches.datafile.json",
+  "context": "contexts/operator_commerce_order_count_gt_matches.context.json",
+  "flagKey": "operator-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_operator",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_operator\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

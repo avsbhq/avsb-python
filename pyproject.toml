@@ -5,33 +5,78 @@ build-backend = "hatchling.build"
 [project]
 name = "avsb"
 version = "1.0.0"
-description = "A vs B feature-flag and experimentation SDK for Python (server-side)."
+description = "A vs B feature flags and experimentation for Python servers."
 requires-python = ">=3.10"
 license = "MIT"
-authors = [{name = "AvsB"}]
-dependencies = []
+authors = [{ name = "AvsB" }]
 readme = "README.md"
+keywords = [
+    "feature-flags",
+    "feature-toggles",
+    "ab-testing",
+    "experimentation",
+    "openfeature",
+    "avsb",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+# The synchronous client has no dependencies at all: HTTP goes through the
+# standard library. Every dependency below is opt in via an extra.
+dependencies = []
 
 [project.urls]
 Homepage = "https://avsb.cloud"
 Documentation = "https://avsb.cloud/docs"
 Repository = "https://github.com/avsbhq/avsb-python"
 Issues = "https://github.com/avsbhq/avsb-python/issues"
+Changelog = "https://github.com/avsbhq/avsb-python/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-fastapi = ["fastapi>=0.100", "httpx>=0.25"]
+# The asyncio client (AsyncAvsbServer). httpx is this SDK's only optional
+# runtime dependency, and it is reachable ONLY through an extra.
+async = ["httpx>=0.25"]
+# SSE datafile streaming, which shares httpx with the async client.
+streaming = ["httpx>=0.25"]
+fastapi = ["fastapi>=0.100"]
 flask = ["flask>=2.3"]
 django = ["django>=4.2"]
 redis = ["redis>=5.0"]
 aws = ["boto3>=1.34"]
 postgres = ["psycopg[binary]>=3.1"]
-openfeature = ["openfeature-sdk>=0.5"]
-streaming = ["httpx>=0.25"]
-test = ["pytest>=7", "pytest-asyncio>=0.23", "pytest-cov>=4"]
+openfeature = ["openfeature-sdk>=0.7"]
+# Everything the test suite needs, including the optional surfaces it covers.
+test = [
+    "pytest>=7",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4",
+    "httpx>=0.25",
+    "openfeature-sdk>=0.7",
+]
+# The local quality gate: `mypy` and `pytest` are the two commands.
+dev = ["mypy>=1.8", "pytest>=7", "pytest-asyncio>=0.23", "httpx>=0.25"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/avsb"]
+
+[tool.hatch.build.targets.wheel.force-include]
+# PEP 561: without this marker in the wheel, every annotation in this package is
+# invisible to mypy and pyright at the call site.
+"src/avsb/py.typed" = "avsb/py.typed"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra -q"
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["src/avsb"]
@@ -40,5 +85,38 @@ source = ["src/avsb"]
 show_missing = true
 skip_covered = false
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/avsb"]
+# ---------------------------------------------------------------------------
+# mypy: the local type gate for this package. Run it with `mypy` from
+# packages/avsb-python (files are configured below, so no path argument needed).
+#
+# `strict = true` turns on the whole set, including disallow_untyped_defs and
+# disallow_incomplete_defs. The public surface carries full annotations, so this
+# passes with no per-module relaxations for src/.
+#
+# `Any` survives in three places on purpose, each because the value genuinely is
+# arbitrary:
+#   * Flag.value and every default_value, which hold whatever the variation
+#     holds. Python cannot express the flag's type at runtime.
+#   * SingleContext.attributes, an open map of targeting values.
+#   * httpx and framework objects, which are typed only when the matching extra
+#     is installed, so annotating them concretely would make mypy fail for
+#     anyone who did not install it.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+files = ["src/avsb"]
+strict = true
+warn_unreachable = true
+warn_no_return = true
+show_error_codes = true
+pretty = true
+# Optional dependencies are absent in a bare checkout; their absence must not
+# be reported as a type error.
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Tests exercise private helpers and deliberately pass wrong types to check the
+# guards, so they are checked without the strict-only rules.
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_untyped_calls = false

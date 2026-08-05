@@ -1,0 +1,26 @@
+{
+  "case": "boundary_split_fractional_bucket_above_first_boundary",
+  "family": "boundary",
+  "description": "Assignment bucket 1235 is above the 1234.5 cumulative boundary and serves variation b, proving the walk really advances.",
+  "datafile": "datafiles/boundary_split_fractional_bucket_above_first_boundary.datafile.json",
+  "context": "contexts/boundary_split_fractional_bucket_above_first_boundary.context.json",
+  "flagKey": "boundary-split-fractional",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "assignment",
+    "ruleId": "rule_split",
+    "bucket": 1235,
+    "why": "Half a bucket above the same fractional cumulative boundary.",
+    "resolvedKey": "split-frac-out-6397"
+  },
+  "expected": {
+    "value": "B",
+    "variationKey": "b",
+    "source": "rule",
+    "ruleId": "rule_split",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_split\" matched (ab_test), bucketed into variation \"b\" (hash 1235/6234.5)"
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "version": 2,
+  "projectType": "FEATURE_FLAG",
+  "sdkKey": "sdk_production_conformancefixture01",
+  "environmentKey": "production",
+  "publishedAt": "2026-05-29T00:00:00.000Z",
+  "collectEndpoint": "https://ingest.avsb.cloud",
+  "heartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat",
+  "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+  "flags": [
+    {
+      "type": "string",
+      "enabled": true,
+      "defaultVariationId": "var_default",
+      "variations": [
+        {
+          "id": "var_default",
+          "key": "default",
+          "value": "default"
+        },
+        {
+          "id": "var_first",
+          "key": "first",
+          "value": "first"
+        },
+        {
+          "id": "var_second",
+          "key": "second",
+          "value": "second"
+        }
+      ],
+      "overrides": [],
+      "rules": [
+        {
+          "enabled": true,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": null,
+          "variations": [
+            {
+              "variationId": "var_first",
+              "percentage": 1
+            }
+          ],
+          "id": "rule_first",
+          "type": "targeted_delivery"
+        },
+        {
+          "enabled": true,
+          "audienceIds": [],
+          "hashAttribute": "user.key",
+          "trafficAllocation": null,
+          "variations": [
+            {
+              "variationId": "var_second",
+              "percentage": 1
+            }
+          ],
+          "id": "rule_second",
+          "type": "targeted_delivery"
+        }
+      ],
+      "id": "flag_rule_order",
+      "key": "interaction-rule-order"
+    }
+  ],
+  "audiences": []
+}

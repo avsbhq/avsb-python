@@ -1,0 +1,19 @@
+{
+  "case": "holdout_excludes_user_serves_holdout_variation",
+  "family": "core",
+  "description": "A user landing inside a 99.9% holdout window is served the holdout default variation with source=holdout, ruleType=holdout.",
+  "datafile": "datafiles/holdout_excludes_user_serves_holdout_variation.datafile.json",
+  "context": "contexts/holdout_excludes_user_serves_holdout_variation.context.json",
+  "flagKey": "feature-with-holdout",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "holdout",
+    "ruleId": "holdout_q2",
+    "ruleType": "holdout",
+    "reasons": [
+      "held out by holdout \"q2-2026-holdout\", serving default variation \"off\""
+    ]
+  }
+}

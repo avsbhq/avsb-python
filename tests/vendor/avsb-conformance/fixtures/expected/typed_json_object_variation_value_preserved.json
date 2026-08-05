@@ -1,0 +1,34 @@
+{
+  "case": "typed_json_object_variation_value_preserved",
+  "family": "typed",
+  "description": "A json flag returns the whole nested document: booleans, numbers, arrays, nested objects, and an explicit null.",
+  "datafile": "datafiles/typed_json_object_variation_value_preserved.datafile.json",
+  "context": "contexts/typed_json_object_variation_value_preserved.context.json",
+  "flagKey": "typed-json-feature",
+  "defaultValue": {},
+  "expected": {
+    "value": {
+      "mode": "on",
+      "retries": 3,
+      "ratio": 0.25,
+      "enabled": true,
+      "tags": [
+        "a",
+        "b"
+      ],
+      "nested": {
+        "deep": {
+          "flag": false
+        }
+      },
+      "nothing": null
+    },
+    "variationKey": "json-rich",
+    "source": "rule",
+    "ruleId": "rule_json",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_json\" matched (targeted_delivery), serving variation \"json-rich\""
+    ]
+  }
+}

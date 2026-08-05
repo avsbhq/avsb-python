@@ -1,0 +1,288 @@
+{
+  "schema": "../../schema.endpoints.json",
+  "family": "endpoints",
+  "contract": "SDK and API DX overhaul spec, section 1.1 (data-plane endpoint contract)",
+  "authoredByHand": true,
+  "note": "This family is NOT generated. It is the language-neutral SPEC every SDK is measured against, including the TypeScript reference. Editing a URL here is editing the contract: update every endpoints module in the same commit. Out of contract, deliberately untested: passing an EXPLICIT empty string as a host. The dynamic languages treat it as given and produce a relative URL, while Go, Java, and .NET cannot distinguish it from an omitted argument and fall back to the default host. Omit the argument instead of passing an empty string.",
+  "defaults": {
+    "cdnHost": "https://cdn.avsb.cloud",
+    "collectHost": "https://ingest.avsb.cloud",
+    "appHost": "https://app.avsb.cloud"
+  },
+  "forbiddenHosts": [
+    "https://datafile.avsb.cloud",
+    "https://stream.avsb.cloud",
+    "https://sdk.avsb.cloud",
+    "https://collect.avsb.cloud"
+  ],
+  "cases": [
+    {
+      "case": "datafile_default_host",
+      "kind": "datafile",
+      "description": "The datafile URL is {cdnHost}/{sdkKey}/datafile.json against the public CDN.",
+      "given": { "sdkKey": "sdk_production_abc123" },
+      "expected": { "url": "https://cdn.avsb.cloud/sdk_production_abc123/datafile.json" }
+    },
+    {
+      "case": "datafile_custom_host",
+      "kind": "datafile",
+      "description": "A custom CDN host replaces only the origin.",
+      "given": { "sdkKey": "sdk_production_abc123", "cdnHost": "https://cdn.example.test" },
+      "expected": { "url": "https://cdn.example.test/sdk_production_abc123/datafile.json" }
+    },
+    {
+      "case": "datafile_custom_host_trailing_slash",
+      "kind": "datafile",
+      "description": "A trailing slash on the host is trimmed, never doubled into the path.",
+      "given": { "sdkKey": "sdk_production_abc123", "cdnHost": "https://cdn.example.test/" },
+      "expected": { "url": "https://cdn.example.test/sdk_production_abc123/datafile.json" }
+    },
+    {
+      "case": "datafile_local_dev_host",
+      "kind": "datafile",
+      "description": "Local development points at the app's public directory over http.",
+      "given": { "sdkKey": "sdk_development_local1", "cdnHost": "http://localhost:3000" },
+      "expected": { "url": "http://localhost:3000/sdk_development_local1/datafile.json" }
+    },
+    {
+      "case": "datafile_empty_key_is_an_error",
+      "kind": "datafile",
+      "description": "An empty SDK key must raise, not build a double-slash URL that 404s at the edge with no explanation.",
+      "given": { "sdkKey": "" },
+      "expected": { "error": true }
+    },
+    {
+      "case": "preview_default_host",
+      "kind": "preview",
+      "description": "The preview snapshot sits beside the datafile under the same key prefix.",
+      "given": { "sdkKey": "sdk_production_abc123" },
+      "expected": { "url": "https://cdn.avsb.cloud/sdk_production_abc123/preview.json" }
+    },
+    {
+      "case": "object_key_datafile",
+      "kind": "objectKey",
+      "description": "CDN and R2 object key for the live datafile.",
+      "given": { "sdkKey": "sdk_production_abc123", "file": "datafile" },
+      "expected": { "objectKey": "sdk_production_abc123/datafile.json" }
+    },
+    {
+      "case": "object_key_preview",
+      "kind": "objectKey",
+      "description": "CDN and R2 object key for the preview snapshot.",
+      "given": { "sdkKey": "sdk_production_abc123", "file": "preview" },
+      "expected": { "objectKey": "sdk_production_abc123/preview.json" }
+    },
+    {
+      "case": "collect_single",
+      "kind": "collect",
+      "description": "One event per request. Used by the snippet's beacon fallback.",
+      "given": { "kind": "single" },
+      "expected": { "path": "/v1/collect", "url": "https://ingest.avsb.cloud/v1/collect" }
+    },
+    {
+      "case": "collect_batch",
+      "kind": "collect",
+      "description": "Exposure batch. The endpoint every server SDK posts exposures to.",
+      "given": { "kind": "batch" },
+      "expected": {
+        "path": "/v1/collect/batch",
+        "url": "https://ingest.avsb.cloud/v1/collect/batch"
+      }
+    },
+    {
+      "case": "collect_metric_batch",
+      "kind": "collect",
+      "description": "Conversion and metric batch.",
+      "given": { "kind": "metricBatch" },
+      "expected": {
+        "path": "/v1/collect/metric-batch",
+        "url": "https://ingest.avsb.cloud/v1/collect/metric-batch"
+      }
+    },
+    {
+      "case": "collect_orders",
+      "kind": "collect",
+      "description": "Purchase and order events.",
+      "given": { "kind": "orders" },
+      "expected": {
+        "path": "/v1/collect/orders",
+        "url": "https://ingest.avsb.cloud/v1/collect/orders"
+      }
+    },
+    {
+      "case": "collect_errors",
+      "kind": "collect",
+      "description": "Aggregated client-side error reports.",
+      "given": { "kind": "errors" },
+      "expected": {
+        "path": "/v1/collect/errors",
+        "url": "https://ingest.avsb.cloud/v1/collect/errors"
+      }
+    },
+    {
+      "case": "collect_ping",
+      "kind": "collect",
+      "description": "Install-detection ping. Rate limited per IP, not per key.",
+      "given": { "kind": "ping" },
+      "expected": { "path": "/v1/ping", "url": "https://ingest.avsb.cloud/v1/ping" }
+    },
+    {
+      "case": "collect_geo",
+      "kind": "collect",
+      "description": "Coarse geo lookup for audience targeting. GET, no body.",
+      "given": { "kind": "geo" },
+      "expected": { "path": "/v1/geo", "url": "https://ingest.avsb.cloud/v1/geo" }
+    },
+    {
+      "case": "collect_self_hosted_origin",
+      "kind": "collect",
+      "description": "A datafile that publishes its own ingest origin routes there instead.",
+      "given": { "kind": "batch", "collectEndpoint": "https://events.customer.test" },
+      "expected": {
+        "path": "/v1/collect/batch",
+        "url": "https://events.customer.test/v1/collect/batch"
+      }
+    },
+    {
+      "case": "collect_endpoint_already_carries_a_path",
+      "kind": "collect",
+      "description": "The web-experiment datafile publishes the full batch URL in collectEndpoint. Normalise to the origin first so the path is never doubled.",
+      "given": {
+        "kind": "batch",
+        "collectEndpoint": "https://ingest.avsb.cloud/v1/collect/batch"
+      },
+      "expected": {
+        "path": "/v1/collect/batch",
+        "url": "https://ingest.avsb.cloud/v1/collect/batch"
+      }
+    },
+    {
+      "case": "collect_endpoint_with_a_path_resolves_a_sibling",
+      "kind": "collect",
+      "description": "Same normalisation, different target: an orders send from a collectEndpoint that carries the batch path.",
+      "given": {
+        "kind": "orders",
+        "collectEndpoint": "https://ingest.avsb.cloud/v1/collect/batch"
+      },
+      "expected": {
+        "path": "/v1/collect/orders",
+        "url": "https://ingest.avsb.cloud/v1/collect/orders"
+      }
+    },
+    {
+      "case": "stream_endpoint_option_wins",
+      "kind": "stream",
+      "description": "An explicit constructor option beats the datafile field.",
+      "given": {
+        "resolve": true,
+        "optionEndpoint": "https://stream.example.test/ticket",
+        "datafileStreamEndpoint": "https://app.avsb.cloud/api/sdk/stream"
+      },
+      "expected": {
+        "available": true,
+        "endpoint": "https://stream.example.test/ticket",
+        "source": "option"
+      }
+    },
+    {
+      "case": "stream_endpoint_from_datafile",
+      "kind": "stream",
+      "description": "With no option, the server-controlled datafile field decides.",
+      "given": {
+        "resolve": true,
+        "datafileStreamEndpoint": "https://app.avsb.cloud/api/sdk/stream"
+      },
+      "expected": {
+        "available": true,
+        "endpoint": "https://app.avsb.cloud/api/sdk/stream",
+        "source": "datafile"
+      }
+    },
+    {
+      "case": "stream_endpoint_unavailable_when_absent",
+      "kind": "stream",
+      "description": "With neither source, streaming stays off and the SDK says why. No SDK may fall back to a guessed host: the stream.avsb.cloud default gave every Go customer an infinite reconnect loop against DNS that does not resolve.",
+      "given": { "resolve": true },
+      "expected": { "available": false, "endpoint": null, "source": null }
+    },
+    {
+      "case": "stream_ticket_url",
+      "kind": "stream",
+      "description": "Step 1 of streaming: the ticket request carries the key as a query parameter, because SSE clients cannot set headers.",
+      "given": {
+        "streamEndpoint": "https://app.avsb.cloud/api/sdk/stream",
+        "sdkKey": "sdk_production_abc123"
+      },
+      "expected": {
+        "url": "https://app.avsb.cloud/api/sdk/stream?sdkKey=sdk_production_abc123"
+      }
+    },
+    {
+      "case": "stream_subscribe_url",
+      "kind": "stream",
+      "description": "Step 2 of streaming: the SSE URL built from the url the ticket response handed back. The host is whatever the ticket named, so this case uses a neutral one.",
+      "given": {
+        "subscribeBaseUrl": "https://stream.example.test/subscribe",
+        "sdkKey": "sdk_production_abc123",
+        "token": "tkn_1"
+      },
+      "expected": {
+        "url": "https://stream.example.test/subscribe?sdkKey=sdk_production_abc123&token=tkn_1"
+      }
+    },
+    {
+      "case": "stream_subscribe_url_percent_encodes_the_token",
+      "kind": "stream",
+      "description": "Token characters that would break the query are percent-encoded identically in every language.",
+      "given": {
+        "subscribeBaseUrl": "https://stream.example.test/subscribe",
+        "sdkKey": "sdk_production_abc123",
+        "token": "tk+n/1="
+      },
+      "expected": {
+        "url": "https://stream.example.test/subscribe?sdkKey=sdk_production_abc123&token=tk%2Bn%2F1%3D"
+      }
+    },
+    {
+      "case": "stream_subscribe_url_encodes_a_space_as_percent20",
+      "kind": "stream",
+      "description": "A space must encode as %20, never as +. Form encoding (Go url.QueryEscape, Java URLEncoder, Ruby CGI.escape) turns a space into + and a literal plus into %2B, so a port that forwards form encoding straight into a query VALUE sends a different token than the reference does. This case carries both characters at once.",
+      "given": {
+        "subscribeBaseUrl": "https://stream.example.test/subscribe",
+        "sdkKey": "sdk_production_abc123",
+        "token": "tk n+1"
+      },
+      "expected": {
+        "url": "https://stream.example.test/subscribe?sdkKey=sdk_production_abc123&token=tk%20n%2B1"
+      }
+    },
+    {
+      "case": "stream_endpoint_fallback_url",
+      "kind": "stream",
+      "description": "The ticket path on the dashboard origin. Used by the publisher that writes streamEndpoint, and by docs.",
+      "given": { "appHost": "https://app.avsb.cloud" },
+      "expected": { "url": "https://app.avsb.cloud/api/sdk/stream" }
+    },
+    {
+      "case": "heartbeat_from_datafile",
+      "kind": "heartbeat",
+      "description": "The heartbeat endpoint comes from the datafile, verbatim.",
+      "given": { "datafileHeartbeatEndpoint": "https://app.avsb.cloud/api/sdk/heartbeat" },
+      "expected": { "url": "https://app.avsb.cloud/api/sdk/heartbeat" }
+    },
+    {
+      "case": "heartbeat_absent_means_do_not_send",
+      "kind": "heartbeat",
+      "description": "No heartbeat endpoint in the datafile means send nothing. Do not default to the public app host: a proxied deployment publishes its own origin.",
+      "given": {},
+      "expected": { "url": null }
+    },
+    {
+      "case": "heartbeat_fallback_url",
+      "kind": "heartbeat",
+      "description": "The heartbeat path on the dashboard origin. Used by the publisher and by docs.",
+      "given": { "appHost": "https://app.avsb.cloud" },
+      "expected": { "url": "https://app.avsb.cloud/api/sdk/heartbeat" }
+    }
+  ]
+}

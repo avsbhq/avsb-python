@@ -1,0 +1,19 @@
+{
+  "case": "interaction_holdout_beats_full_rollout_rule",
+  "family": "interaction",
+  "description": "A 100% holdout wins over a fully rolled-out rule: source=holdout, ruleId is the holdout id, ruleType=holdout.",
+  "datafile": "datafiles/interaction_holdout_beats_full_rollout_rule.datafile.json",
+  "context": "contexts/interaction_holdout_beats_full_rollout_rule.context.json",
+  "flagKey": "interaction-held-out-feature",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "holdout",
+    "ruleId": "holdout_interaction",
+    "ruleType": "holdout",
+    "reasons": [
+      "held out by holdout \"interaction-holdout\", serving default variation \"off\""
+    ]
+  }
+}

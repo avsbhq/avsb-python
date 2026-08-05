@@ -1,0 +1,19 @@
+{
+  "case": "edge_empty_context_key_buckets_deterministically",
+  "family": "edge",
+  "description": "An empty context key still evaluates, and every empty-key context lands in the same bucket. That is the footgun behind silently corrupted experiments, so the value is recorded rather than left undefined. Client layers warn once per process about it (spec §1.2).",
+  "datafile": "datafiles/edge_empty_context_key_buckets_deterministically.datafile.json",
+  "context": "contexts/edge_empty_context_key_buckets_deterministically.context.json",
+  "flagKey": "edge-empty-key-feature",
+  "defaultValue": "caller-default",
+  "expected": {
+    "value": "treatment",
+    "variationKey": "treatment",
+    "source": "rule",
+    "ruleId": "rule_empty_key",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_empty_key\" matched (ab_test), bucketed into variation \"treatment\" (hash 6234/10000)"
+    ]
+  }
+}

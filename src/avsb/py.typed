@@ -1,0 +1,8 @@
+# PEP 561 marker: this package ships inline type annotations.
+#
+# Without this file, mypy and pyright ignore every annotation in the package
+# and treat `avsb` as untyped, however well annotated the source is. Its
+# presence is what makes `server.get_bool_flag("k", False, ctx)` type-check at
+# the call site.
+#
+# The file is intentionally not empty so its purpose survives a code review.

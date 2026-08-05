@@ -1,0 +1,7 @@
+{
+  "kind": "user",
+  "key": "u_purchased_hit",
+  "purchaseHistory": {
+    "hasPurchased": true
+  }
+}

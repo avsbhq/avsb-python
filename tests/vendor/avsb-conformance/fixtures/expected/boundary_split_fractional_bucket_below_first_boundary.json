@@ -1,0 +1,26 @@
+{
+  "case": "boundary_split_fractional_bucket_below_first_boundary",
+  "family": "boundary",
+  "description": "A first variation at 0.12345 puts the first cumulative boundary at 1234.5. Assignment bucket 1234 is below it and serves variation a. A port that floors the cumulative total to 1234 serves variation b instead, changing the variation a real visitor sees.",
+  "datafile": "datafiles/boundary_split_fractional_bucket_below_first_boundary.datafile.json",
+  "context": "contexts/boundary_split_fractional_bucket_below_first_boundary.context.json",
+  "flagKey": "boundary-split-fractional",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "assignment",
+    "ruleId": "rule_split",
+    "bucket": 1234,
+    "why": "Half a bucket below a fractional cumulative boundary: the reliable rounding detector on the assignment walk.",
+    "resolvedKey": "split-frac-in-27330"
+  },
+  "expected": {
+    "value": "A",
+    "variationKey": "a",
+    "source": "rule",
+    "ruleId": "rule_split",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_split\" matched (ab_test), bucketed into variation \"a\" (hash 1234/1234.5)"
+    ]
+  }
+}

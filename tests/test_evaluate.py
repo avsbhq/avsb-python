@@ -2,7 +2,7 @@
 Flag evaluator tests — not_found / disabled / override / targeted / ab_test / holdout / default.
 """
 
-from avsb.core.types import (
+from avsb.core.datafile_types import (
     Condition,
     ConditionGroup,
     FlagDatafile,
@@ -12,10 +12,10 @@ from avsb.core.types import (
     FlagDatafileOverride,
     FlagDatafileRule,
     FlagDatafileVariation,
-    SingleContext,
     VariationAllocation,
 )
 from avsb.core.evaluate import evaluate_flag
+from avsb.core.types import SingleContext
 from avsb.test_utils import InMemoryDatafileLoader, build_minimal_datafile
 
 

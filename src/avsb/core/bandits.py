@@ -14,17 +14,13 @@ from __future__ import annotations
 
 import math
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-from .types import (
-    BanditAction,
-    BanditConfig,
-    BanditDecisionLogEntry,
-    EvalContext,
-)
 from .context import bucketing_key, context_summary
+from .datafile_types import BanditAction, BanditConfig
 from .hash import murmurhash3
+from .types import BanditDecisionLogEntry, EvalContext
 
 _MAX_BUCKET = 10_000
 _HASH_RANGE = 0x100000000  # 2^32
@@ -91,24 +87,34 @@ def _derive_context_bucket(config: BanditConfig, context: EvalContext) -> str:
 
 
 def _resolve_context_attribute(ctx: EvalContext, key: str) -> str:
-    """Walk a dotted path through the context (mirrors TS resolveContextAttribute)."""
+    """Walk a dotted path through the context for contextual-bucket lookup.
+
+    ``"organization.tier"`` resolves against the matching sub-context of a
+    multi-context container. ``key`` and ``name`` resolve to the built-in
+    fields, matching the reference engine, where those are ordinary
+    properties on the context object.
+
+    Anything unresolvable, or resolvable to a non-scalar, is the empty
+    string: a bucket key must always exist.
+    """
     from .types import MultiContext, SingleContext
 
-    path = key.split(".")
     cursor: Any = ctx
-    for segment in path:
+    for segment in key.split("."):
         if cursor is None:
             return ""
         if isinstance(cursor, MultiContext):
             cursor = cursor.contexts.get(segment)
         elif isinstance(cursor, SingleContext):
-            cursor = cursor.attributes.get(segment)
+            cursor = cursor.get_attribute(segment)
         elif isinstance(cursor, dict):
             cursor = cursor.get(segment)
         else:
             return ""
     if cursor is None:
         return ""
+    if isinstance(cursor, bool):
+        return "true" if cursor else "false"
     if isinstance(cursor, (str, int, float)):
         return str(cursor)
     return ""
@@ -171,7 +177,7 @@ def epsilon_greedy(
             explore_fired=True,
         )
 
-    # Exploit branch — highest mean, alphabetical tie-break.
+    # Exploit branch: highest mean, alphabetical tie-break.
     best_id: str | None = None
     best_mean = float("-inf")
     best_count = 0

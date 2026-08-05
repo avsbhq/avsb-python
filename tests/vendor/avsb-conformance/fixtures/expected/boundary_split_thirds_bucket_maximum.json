@@ -1,0 +1,26 @@
+{
+  "case": "boundary_split_thirds_bucket_maximum",
+  "family": "boundary",
+  "description": "Assignment bucket 9999, the maximum, serves the last declared variation. A port that buckets modulo 10000 but compares against percentages scaled to 100 falls out of the walk here and serves the flag default instead.",
+  "datafile": "datafiles/boundary_split_thirds_bucket_maximum.datafile.json",
+  "context": "contexts/boundary_split_thirds_bucket_maximum.context.json",
+  "flagKey": "boundary-split-thirds",
+  "defaultValue": "caller-default",
+  "probe": {
+    "hash": "assignment",
+    "ruleId": "rule_split",
+    "bucket": 9999,
+    "why": "Locks the top of the bucket range.",
+    "resolvedKey": "thirds-max-5577"
+  },
+  "expected": {
+    "value": "C",
+    "variationKey": "c",
+    "source": "rule",
+    "ruleId": "rule_split",
+    "ruleType": "ab_test",
+    "reasons": [
+      "rule \"rule_split\" matched (ab_test), bucketed into variation \"c\" (hash 9999/10000)"
+    ]
+  }
+}

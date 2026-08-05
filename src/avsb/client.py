@@ -1,224 +1,627 @@
 """
-AvsbServer + AsyncAvsbServer: public Python SDK clients.
+:class:`AvsbServer`: the synchronous server-side Python client.
 
-Per spec §5.3, every get_*_flag method REQUIRES a default value.
+Construct it with an SDK key, call :meth:`AvsbServer.on_ready` once at
+startup, evaluate flags anywhere, and call :meth:`AvsbServer.close` on
+shutdown::
 
-Quickstart::
-
-    import asyncio, os
-    from avsb import AvsbServer, EvalContext
+    import os
+    from avsb import AvsbServer, SingleContext
 
     server = AvsbServer(sdk_key=os.environ["AVSB_SDK_KEY"])
-    asyncio.run(server.on_ready())
+    server.on_ready()
 
     ctx = SingleContext.user(key="u_1", plan="pro")
-    show_new_checkout = server.get_bool_flag("checkout-v2", False, context=ctx)
+    if server.get_bool_flag("checkout-v2", False, ctx):
+        ...
+
+Evaluation is local and in-process: the client holds the datafile in memory,
+so a flag read is a dict lookup and a hash, not a network call. There are no
+proxies to run.
+
+Nothing here raises for an operational problem. Before a datafile exists,
+evaluations return the caller's default with source ``not_ready``; a failed
+fetch comes back inside :class:`~avsb.InitResult` rather than as an exception.
+
+This client adds no dependencies: HTTP goes through the standard library. For
+an asyncio-native client on httpx, install ``avsb[async]`` and use
+:class:`avsb.async_client.AsyncAvsbServer`, which mirrors this surface.
+
+Decisions are made by :class:`avsb._evaluation.EvaluationCore`, shared with the
+async client so the two can never disagree.
 """
 
 from __future__ import annotations
 
-import asyncio
-import json
-import time
-import urllib.request
-from typing import Any
+import threading
+from typing import Any, Iterable, Mapping
 
+from ._evaluation import EvaluationCore
 from .core._datafile_loader import parse_datafile
-from .core.evaluate import evaluate_flag
+from .core.bandits import BanditModelStore
+from .core.datafile_types import FlagDatafile
+from .core.events import PurchaseOrder
 from .core.types import (
+    DecideOption,
+    DecisionLog,
     EvalContext,
     Flag,
-    FlagDatafile,
-    FlagEvaluationDetails,
-    SingleContext,
-    MultiContext,
+    InitResult,
+    StickyBucketService,
 )
-from .core.context import eval_context_from_dict, context_summary
 from .decision_log import DecisionLogCollector
-from .logger import AvsbLogger
+from .endpoints import datafile_url as build_datafile_url
+from .endpoints import resolve_heartbeat_endpoint
+from .fetcher import (
+    DEFAULT_FETCH_TIMEOUT_SECONDS,
+    DatafileFetchError,
+    DatafileTransport,
+    fetch_datafile,
+)
+from .heartbeat import Heartbeat, HeartbeatSender
+from .logger import Logger, default_logger
+from .overrides import RuntimeOverrides
+from .polling import DEFAULT_POLLING_INTERVAL_SECONDS, PollingThread
+from .sdk_key import validate_sdk_key_shape
+from .sources import to_public_source
+from .sticky_pipeline import StickyPipeline
+from .tracker import EventSender, ServerTracker, TrackerOptions
+from .user_bound import UserBoundClient
 
+#: Conversions recorded before the client is ready wait here. Bounded, so a
+#: process that never reaches ready cannot grow its memory without limit.
+MAX_PENDING_EVENTS = 500
 
-# ---------------------------------------------------------------------------
-# Internal mapping from engine source to public EvaluationSource
-# ---------------------------------------------------------------------------
-
-_SOURCE_MAP: dict[str, str] = {
-    "override": "datafileOverride",
-    "runtime_override": "runtimeOverride",
-    "sticky": "sticky",
-    "rule": "rule",
-    "default": "default",
-    "not_found": "not_found",
-    "disabled": "disabled",
-    "holdout": "holdout",
-    "bandit": "bandit",
-}
-
-
-def _to_public_source(legacy: str) -> str:
-    return _SOURCE_MAP.get(legacy, legacy)
-
-
-def _details_to_flag(details: FlagEvaluationDetails, evaluated_at: int, duration_micros: int) -> Flag:
-    return Flag(
-        value=details.value,
-        variation_key=details.variation_key,
-        source=_to_public_source(details.source),  # type: ignore[arg-type]
-        rule_id=details.rule_id,
-        rule_type=details.rule_type,
-        reasons=tuple(details.reasons),
-        evaluated_at=evaluated_at,
-        duration_micros=duration_micros,
-    )
-
-
-# ---------------------------------------------------------------------------
-# EvalContext factory (convenience)
-# ---------------------------------------------------------------------------
-
-
-def _make_single_context(kind: str, key: str, **attrs: Any) -> SingleContext:
-    reserved = {"kind", "key", "name", "_meta"}
-    name = attrs.pop("name", None)
-    remaining = {k: v for k, v in attrs.items() if k not in reserved}
-    return SingleContext(kind=kind, key=key, name=name, attributes=remaining)
-
-
-# ---------------------------------------------------------------------------
-# AvsbServer
-# ---------------------------------------------------------------------------
+__all__ = ["AvsbServer", "MAX_PENDING_EVENTS", "to_public_source"]
 
 
 class AvsbServer:
-    """
-    Synchronous A vs B server-side SDK client.
+    """Synchronous A vs B feature-flag and experimentation client.
 
-    Parameters
-    ----------
-    sdk_key:
-        Your environment SDK key from the A vs B dashboard.
-    datafile:
-        Optional pre-loaded FlagDatafile (bootstrap mode).
-    datafile_url:
-        Override the datafile fetch URL.  Defaults to the A vs B CDN.
+    One instance per process. It owns a background polling thread and a
+    background event-flush thread, so building one per request would leak both.
     """
-
-    _CDN_URL = "https://cdn.avsb.cloud/datafiles/{sdk_key}.json"
 
     def __init__(
         self,
         sdk_key: str,
         *,
-        datafile: FlagDatafile | dict[str, Any] | None = None,
+        datafile: FlagDatafile | Mapping[str, Any] | None = None,
         datafile_url: str | None = None,
+        cdn_host: str | None = None,
+        polling_interval_seconds: float = DEFAULT_POLLING_INTERVAL_SECONDS,
+        polling_enabled: bool = True,
+        init_timeout_seconds: float = DEFAULT_FETCH_TIMEOUT_SECONDS,
+        events_enabled: bool = True,
+        tracker_options: TrackerOptions | None = None,
+        sticky_bucket_service: StickyBucketService | None = None,
+        bandit_model_store: BanditModelStore | None = None,
+        runtime_overrides: Mapping[str, str] | None = None,
+        decision_log_limit: int | None = None,
+        logger: Logger | None = None,
+        transport: DatafileTransport | None = None,
+        event_sender: EventSender | None = None,
+        heartbeat_sender: HeartbeatSender | None = None,
     ) -> None:
+        """Create a client.
+
+        :param sdk_key: The environment SDK key, shaped
+            ``sdk_<environment>_<id>``. Copy it from Settings, then
+            Environments, in the A vs B dashboard. A value that does not look
+            like a key logs an actionable error and is used anyway, because the
+            key format can grow and the fetch is the real arbiter.
+        :param datafile: A pre-loaded datafile, either a
+            :class:`~avsb.FlagDatafile` or the raw dict. Supplying one makes the
+            client ready immediately with no network call, which is how tests
+            and air-gapped deployments work.
+        :param datafile_url: Fetch from this exact URL instead of the CDN.
+        :param cdn_host: Replace only the CDN origin, keeping the standard
+            ``/{sdk_key}/datafile.json`` path. For a self-hosted mirror.
+        :param polling_interval_seconds: How often to refresh the datafile.
+            Floored at 5 seconds and jittered by plus or minus 20 percent, so a
+            fleet does not fetch in lockstep.
+        :param polling_enabled: Set ``False`` for a short-lived process such as
+            a batch job, where one fetch is enough.
+        :param init_timeout_seconds: How long the first fetch may take before
+            :meth:`on_ready` gives up on it and returns a failure.
+        :param events_enabled: Set ``False`` to evaluate without recording
+            exposures or conversions. Results pages will then have no data for
+            server-side experiments, so do this deliberately.
+        :param tracker_options: Event batching and retry tuning.
+        :param sticky_bucket_service: A store that keeps ab_test assignments
+            stable across processes and datafile republishes.
+        :param bandit_model_store: Learned bandit models. Without one, bandit
+            rules run their deterministic cold-start policy rather than being
+            skipped.
+        :param runtime_overrides: Flag key to variation key, applied ahead of
+            everything else. For local development and incident response.
+        :param decision_log_limit: How many decision-log entries to retain
+            before the oldest are dropped. ``None`` uses the default bound.
+        :param logger: Any object with ``debug``, ``info``, ``warn``, and
+            ``error``. Defaults to warn-level stderr in development and silence
+            in production.
+        :param transport: Datafile HTTP transport, for tests.
+        :param event_sender: Event HTTP sender, for tests.
+        :param heartbeat_sender: Heartbeat HTTP sender, for tests.
+        """
         self._sdk_key = sdk_key
-        self._datafile_url = datafile_url or self._CDN_URL.format(sdk_key=sdk_key)
-        self._datafile: FlagDatafile | None = None
-        self._log = AvsbLogger("avsb.server")
-        self._decision_log = DecisionLogCollector()
+        self._logger = logger or default_logger()
 
-        if datafile is not None:
-            if isinstance(datafile, dict):
-                self._datafile = parse_datafile(datafile)
-            else:
-                self._datafile = datafile
+        key_shape = validate_sdk_key_shape(sdk_key)
+        if not key_shape.valid and key_shape.message:
+            self._logger.error(key_shape.message)
 
-    # -- Lifecycle -----------------------------------------------------------
+        self._explicit_datafile_url = datafile_url
+        self._cdn_host = cdn_host
+        self._init_timeout = init_timeout_seconds
+        self._transport = transport
+        self._event_sender = event_sender
+        self._events_enabled = events_enabled
+        self._tracker_options = tracker_options
+        self._polling_enabled = polling_enabled
+        self._polling_interval = polling_interval_seconds
 
-    async def on_ready(self, timeout: float = 10.0) -> None:
-        """Fetch (or confirm) the datafile.  Call once at startup."""
-        if self._datafile is not None:
-            return
-        loop = asyncio.get_event_loop()
-        self._datafile = await loop.run_in_executor(None, self._fetch_datafile)
-
-    def _fetch_datafile(self) -> FlagDatafile:
-        req = urllib.request.Request(
-            self._datafile_url,
-            headers={"User-Agent": "avsb-python/1.0.0"},
+        self._core = EvaluationCore(
+            logger=self._logger,
+            decision_log=DecisionLogCollector(
+                limit=decision_log_limit, logger=self._logger
+            ),
+            overrides=RuntimeOverrides(runtime_overrides),
+            sticky=StickyPipeline(sticky_bucket_service, logger=self._logger),
+            bandit_model_store=bandit_model_store,
+            events_enabled=events_enabled,
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            raw = json.loads(resp.read().decode())
-        return parse_datafile(raw)
-
-    # -- Core evaluation -----------------------------------------------------
-
-    def _require_datafile(self) -> FlagDatafile:
-        if self._datafile is None:
-            raise RuntimeError(
-                "AvsbServer is not ready.  Call `await server.on_ready()` before evaluating flags."
+        if datafile is not None:
+            self._core.datafile = (
+                datafile
+                if isinstance(datafile, FlagDatafile)
+                else parse_datafile(dict(datafile))
             )
-        return self._datafile
+
+        self._heartbeat = Heartbeat(
+            sdk_key=sdk_key, logger=self._logger, sender=heartbeat_sender
+        )
+        self._tracker: ServerTracker | None = None
+        self._poller: PollingThread | None = None
+        self._lock = threading.Lock()
+        self._closed = False
+        self._init_result: InitResult | None = None
+        self._pending_metrics: list[Any] = []
+
+        if self._core.datafile is not None:
+            self._on_datafile_ready()
+
+    # -- Identity -----------------------------------------------------------
+
+    @property
+    def sdk_key(self) -> str:
+        """The SDK key this client was constructed with."""
+        return self._sdk_key
+
+    @property
+    def datafile_url(self) -> str:
+        """The URL this client fetches its datafile from."""
+        if self._explicit_datafile_url:
+            return self._explicit_datafile_url
+        if self._cdn_host:
+            return build_datafile_url(self._sdk_key, self._cdn_host)
+        return build_datafile_url(self._sdk_key)
+
+    def is_ready(self) -> bool:
+        """Is a datafile loaded, so flags evaluate for real?"""
+        return self._core.datafile is not None
+
+    def get_init_result(self) -> InitResult | None:
+        """The result of initialisation, or ``None`` before it was attempted."""
+        return self._init_result
+
+    def is_polling(self) -> bool:
+        """Is the background datafile-refresh thread running?"""
+        return self._poller is not None and self._poller.is_running
+
+    # -- Lifecycle ----------------------------------------------------------
+
+    def on_ready(self, timeout: float | None = None) -> InitResult:
+        """Load the datafile and start the background threads.
+
+        Blocks until the first fetch settles. Returns an
+        :class:`~avsb.InitResult` and never raises: a failed fetch leaves the
+        client serving defaults with source ``not_ready`` while polling keeps
+        retrying, so a transient network error at deploy time does not brick
+        flags until restart.
+
+        Idempotent: calling it again returns the first result.
+        """
+        with self._lock:
+            if self._init_result is not None:
+                return self._init_result
+            self._init_result = self._initialize(timeout)
+            return self._init_result
+
+    def refresh_datafile(self) -> bool:
+        """Fetch the datafile now. Returns whether the configuration changed.
+
+        A failed refresh keeps the datafile already loaded and logs why: stale
+        flags beat no flags.
+        """
+        try:
+            datafile, _source = self._fetch(self._init_timeout)
+        except DatafileFetchError as exc:
+            self._logger.warn(
+                "A vs B datafile refresh failed, so the configuration already "
+                f"loaded is being kept. {exc}"
+            )
+            return False
+
+        previous = self._core.datafile
+        changed = previous is None or previous.published_at != datafile.published_at
+        self._core.datafile = datafile
+        if previous is None:
+            self._start_tracker()
+            self._logger.info(
+                "A vs B is ready: a datafile arrived on the polling interval "
+                "after the first fetch failed."
+            )
+        elif changed:
+            self._logger.info(
+                "A vs B flag configuration updated.",
+                {"published_at": datafile.published_at},
+            )
+        self._send_heartbeat()
+        return changed
+
+    def close(self) -> None:
+        """Stop the background threads and deliver any queued events.
+
+        Call this on shutdown, or use the client as a context manager.
+        Idempotent. After closing, evaluations return defaults with source
+        ``not_ready``.
+        """
+        if self._closed:
+            return
+        self._closed = True
+        self._core.closed = True
+        if self._poller is not None:
+            self._poller.stop()
+            self._poller = None
+        if self._tracker is not None:
+            self._tracker.close()
+            self._tracker = None
+        self._core.tracker = None
+        self._core.datafile = None
+
+    def flush(self) -> None:
+        """Deliver queued events now, without closing the client."""
+        if self._tracker is not None:
+            self._tracker.flush()
+
+    def __enter__(self) -> "AvsbServer":
+        self.on_ready()
+        return self
+
+    def __exit__(self, *_exc_info: object) -> None:
+        self.close()
+
+    # -- Evaluation ---------------------------------------------------------
 
     def get_flag(
         self,
         flag_key: str,
         default_value: Any,
-        *,
         context: EvalContext | None = None,
+        *,
+        decide_options: Iterable[DecideOption] | None = None,
     ) -> Flag:
-        """Evaluate a flag and return a typed Flag result."""
-        datafile = self._require_datafile()
-        ctx: EvalContext = context or SingleContext(kind="user", key="")
-        reasons: list[str] = []
-        started = time.perf_counter()
-        details = evaluate_flag(flag_key, default_value, ctx, datafile, reasons)
-        duration = max(0, round((time.perf_counter() - started) * 1_000_000))
-        flag = _details_to_flag(details, int(time.time() * 1000), duration)
-        self._decision_log.record(flag_key, flag, ctx)
-        return flag
+        """Evaluate a flag and return the full :class:`~avsb.Flag` envelope.
+
+        :param flag_key: The flag's key, as shown in the dashboard.
+        :param default_value: Returned whenever no decision is made. Required,
+            so a flag read always has a defined answer.
+        :param context: Who is being evaluated. Omitting it puts every caller in
+            the same bucket and logs one warning naming the factory call to add.
+        :param decide_options: :attr:`~avsb.DecideOption.DISABLE_EXPOSURE` to
+            read a value without recording an exposure.
+        """
+        return self._core.get_flag(
+            flag_key, default_value, context, decide_options=decide_options
+        )
 
     def get_bool_flag(
         self,
         flag_key: str,
         default_value: bool,
-        *,
         context: EvalContext | None = None,
+        *,
+        decide_options: Iterable[DecideOption] | None = None,
     ) -> bool:
-        return bool(self.get_flag(flag_key, default_value, context=context).value)
+        """Evaluate a boolean flag.
+
+        Returns ``default_value`` when the flag is not declared boolean, and
+        says so in the log. Coercing silently is how ``bool("false")`` became
+        ``True`` and shipped the wrong behaviour with nothing to find.
+        """
+        return self._core.get_bool_flag(
+            flag_key, default_value, context, decide_options=decide_options
+        )
 
     def get_string_flag(
         self,
         flag_key: str,
         default_value: str,
-        *,
         context: EvalContext | None = None,
+        *,
+        decide_options: Iterable[DecideOption] | None = None,
     ) -> str:
-        return str(self.get_flag(flag_key, default_value, context=context).value)
+        """Evaluate a string flag. A type mismatch returns ``default_value``."""
+        return self._core.get_string_flag(
+            flag_key, default_value, context, decide_options=decide_options
+        )
 
     def get_number_flag(
         self,
         flag_key: str,
         default_value: float,
-        *,
         context: EvalContext | None = None,
+        *,
+        decide_options: Iterable[DecideOption] | None = None,
     ) -> float:
-        return float(self.get_flag(flag_key, default_value, context=context).value)
+        """Evaluate a numeric flag. A type mismatch returns ``default_value``."""
+        return self._core.get_number_flag(
+            flag_key, default_value, context, decide_options=decide_options
+        )
 
     def get_json_flag(
         self,
         flag_key: str,
         default_value: Any,
-        *,
         context: EvalContext | None = None,
+        *,
+        decide_options: Iterable[DecideOption] | None = None,
     ) -> Any:
-        return self.get_flag(flag_key, default_value, context=context).value
+        """Evaluate a JSON flag.
 
-    # -- Decision log --------------------------------------------------------
+        The value is whatever the variation holds: a dict, a list, or a scalar.
+        Annotate the call site to get a concrete type back::
 
-    def flush_decision_log(self):
-        return self._decision_log.flush()
+            limits: dict[str, int] = server.get_json_flag("limits", {}, ctx)
+        """
+        return self._core.get_json_flag(
+            flag_key, default_value, context, decide_options=decide_options
+        )
 
+    def get_all_flags(
+        self,
+        context: EvalContext | None = None,
+        *,
+        fire_exposures: bool = False,
+    ) -> dict[str, Flag]:
+        """Evaluate every flag in the datafile for one context.
 
-# ---------------------------------------------------------------------------
-# AsyncAvsbServer
-# ---------------------------------------------------------------------------
+        Exposures are suppressed by default: rendering a debug table must not
+        enrol the viewer in every experiment at once. Pass
+        ``fire_exposures=True`` only when the values really are being served.
 
+        Decisions here are not written to the decision log, because one call
+        would otherwise fill it. Returns an empty dict when not ready.
+        """
+        return self._core.get_all_flags(context, fire_exposures=fire_exposures)
 
-class AsyncAvsbServer(AvsbServer):
-    """
-    Async-first variant.  All flag-evaluation methods are synchronous (they
-    run in the calling thread); async only applies to the datafile fetch so
-    it doesn't block the event loop.
-    """
+    def for_user(self, context: EvalContext) -> UserBoundClient:
+        """Bind a context once and evaluate without repeating it.
+
+        The request-scoped pattern: build one at the top of a handler and pass
+        it down::
+
+            avsb = server.for_user(SingleContext.user(key=user_id))
+            if avsb.get_bool_flag("checkout-v2", False):
+                ...
+            avsb.track("checkout_started")
+        """
+        return UserBoundClient(self._core, context)
+
+    # -- Runtime overrides --------------------------------------------------
+
+    def set_override(self, flag_key: str, variation_key: str) -> None:
+        """Force a variation for every context until cleared.
+
+        Reported with source ``runtimeOverride``. For local development and
+        incident response: the override lives in this process only.
+        """
+        self._core.overrides.set(flag_key, variation_key)
+
+    def set_override_for_context(
+        self, flag_key: str, context_key: str, variation_key: str
+    ) -> None:
+        """Force a variation for one context key only."""
+        self._core.overrides.set_for_context(flag_key, context_key, variation_key)
+
+    def clear_override(self, flag_key: str) -> None:
+        """Remove every runtime override for one flag."""
+        self._core.overrides.clear(flag_key)
+
+    def clear_all_overrides(self) -> None:
+        """Remove every runtime override."""
+        self._core.overrides.clear_all()
+
+    # -- Tracking -----------------------------------------------------------
+
+    def track(
+        self,
+        event_key: str,
+        context: EvalContext | None = None,
+        *,
+        revenue: float | None = None,
+        value: float | None = None,
+        properties: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Record a conversion or metric event.
+
+        :param event_key: The metric key configured in the dashboard. An
+            unrecognised key is still stored, so a typo shows up as an empty
+            metric rather than an error.
+        :param context: Who converted. The visitor id comes from it, and
+            attribution to experiments happens server-side from that visitor's
+            recorded exposures.
+        :param revenue: Money, in decimal major units. ``None`` for a
+            non-revenue conversion.
+        :param value: The number behind an average-value metric. ``None`` for a
+            count.
+        :param properties: Accepted for symmetry with exposures, but conversion
+            events have no properties field, so these cannot be stored. Passing
+            them logs one warning per process rather than pretending they
+            arrived. Put a number in ``value``, or put the dimension on the
+            evaluation context so it rides the exposure event as a registered
+            attribute.
+
+        Events recorded before :meth:`on_ready` completes are queued and
+        delivered once the client is ready.
+        """
+        event = self._core.build_metric_event(
+            event_key,
+            context,
+            revenue=revenue,
+            value=value,
+            properties=properties,
+        )
+        if not self._events_enabled:
+            return
+        tracker = self._tracker
+        if tracker is None:
+            self._queue_pending(event)
+            return
+        tracker.queue_metric(event)
+
+    def track_purchase(self, visitor_id: str, order: PurchaseOrder) -> None:
+        """Send a purchase immediately, bypassing the batch timer.
+
+        An order is the event a customer least wants buffered, so this fires on
+        the calling thread with the same retry curve a batch gets.
+        """
+        if not self._events_enabled:
+            return
+        tracker = self._tracker
+        if tracker is None:
+            self._logger.warn(
+                f'Purchase "{order.order_id}" was dropped because A vs B is not '
+                "ready yet. Call on_ready() at startup, before serving traffic."
+            )
+            return
+        tracker.track_purchase(visitor_id, order)
+
+    def manual_exposure(self, flag_key: str, context: EvalContext) -> None:
+        """Record an exposure without taking a new decision.
+
+        For when a flag was read early (to warm a cache, say) and the value
+        only reached a person later. Does nothing when no rule assigned a
+        variation, because there would be nothing to attribute the exposure to.
+        """
+        self._core.manual_exposure(flag_key, context)
+
+    # -- Decision log -------------------------------------------------------
+
+    def flush_decision_log(self) -> DecisionLog:
+        """Return the recorded decisions and clear them.
+
+        Iterate ``.entries``::
+
+            for entry in server.flush_decision_log().entries:
+                ...
+        """
+        return self._core.decision_log.flush()
+
+    def snapshot_decision_log(self) -> DecisionLog:
+        """Return the recorded decisions without clearing them."""
+        return self._core.decision_log.snapshot()
+
+    # ------------------------------------------------------------------
+    # Internals
+    # ------------------------------------------------------------------
+
+    def _initialize(self, timeout: float | None) -> InitResult:
+        if self._core.datafile is not None:
+            return InitResult(success=True, source="bootstrap")
+
+        try:
+            datafile, source = self._fetch(
+                timeout if timeout is not None else self._init_timeout
+            )
+        except DatafileFetchError as exc:
+            self._logger.error(str(exc))
+            # Polling still starts: the next successful fetch promotes the
+            # client to ready without a restart.
+            self._start_polling()
+            return InitResult(success=False, source="error", error=exc)
+
+        self._core.datafile = datafile
+        self._logger.debug(
+            f"A vs B datafile loaded from {source.url}",
+            {"bytes": source.size_bytes, "published_at": datafile.published_at},
+        )
+        self._on_datafile_ready()
+        return InitResult(success=True, source="network")
+
+    def _fetch(self, timeout: float) -> tuple[FlagDatafile, Any]:
+        return fetch_datafile(
+            self._sdk_key,
+            url=self._explicit_datafile_url,
+            cdn_host=self._cdn_host,
+            timeout=timeout,
+            transport=self._transport,
+        )
+
+    def _on_datafile_ready(self) -> None:
+        self._start_tracker()
+        self._start_polling()
+        self._send_heartbeat()
+
+    def _queue_pending(self, event: Any) -> None:
+        if len(self._pending_metrics) >= MAX_PENDING_EVENTS:
+            dropped = self._pending_metrics.pop(0)
+            self._logger.warn(
+                f"A vs B is holding {MAX_PENDING_EVENTS} conversion events "
+                "recorded before startup finished, so the oldest was dropped "
+                f'("{dropped.event_name}"). Call on_ready() before serving '
+                "traffic so events are delivered instead of buffered."
+            )
+        self._pending_metrics.append(event)
+
+    def _start_tracker(self) -> None:
+        if self._tracker is not None or not self._events_enabled:
+            return
+        datafile = self._core.datafile
+        if datafile is None:
+            return
+        self._tracker = ServerTracker(
+            sdk_key=self._sdk_key,
+            collect_endpoint=datafile.collect_endpoint,
+            options=self._tracker_options,
+            logger=self._logger,
+            sender=self._event_sender,
+        )
+        self._core.tracker = self._tracker
+        if self._pending_metrics:
+            queued = self._pending_metrics
+            self._pending_metrics = []
+            for event in queued:
+                self._tracker.queue_metric(event)
+
+    def _start_polling(self) -> None:
+        if not self._polling_enabled or self._poller is not None or self._closed:
+            return
+        self._poller = PollingThread(
+            self._poll_once,
+            interval_seconds=self._polling_interval,
+            logger=self._logger,
+        )
+        self._poller.start()
+
+    def _poll_once(self) -> None:
+        if self._closed:
+            return
+        self.refresh_datafile()
+
+    def _send_heartbeat(self) -> None:
+        datafile = self._core.datafile
+        if datafile is None:
+            return
+        self._heartbeat.send(resolve_heartbeat_endpoint(datafile.heartbeat_endpoint))
