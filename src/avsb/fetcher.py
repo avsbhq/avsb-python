@@ -82,7 +82,7 @@ def status_message(status: int, url: str, sdk_key: str) -> str:
             f"A vs B datafile not found (HTTP 404) at {url}. The SDK key "
             f'"{described}" has no published datafile. Either the key is wrong, '
             "or this environment has never been published: open the A vs B "
-            "dashboard, go to Settings, then Environments, copy the key for the "
+            "dashboard, go to Environments in the project sidebar, copy the key for the "
             "environment you want, and publish it if the Publish button is "
             f"still showing changes. {_curl_hint(url)}"
         )

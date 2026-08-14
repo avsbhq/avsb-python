@@ -106,7 +106,7 @@ def validate_sdk_key_shape(sdk_key: str) -> SdkKeyShapeResult:
             f'AvsB SDK key "{describe_sdk_key(sdk_key)}" does not look like an '
             f"SDK key: {_diagnose(sdk_key)}. Keys look like {_EXAMPLE_KEY} "
             "(sdk_<environment>_<id>). Copy the key for the environment you "
-            "want from app.avsb.cloud, then Settings, then Environments. The "
+            "want from app.avsb.cloud, then Environments in the project sidebar. The "
             "SDK will keep going with the value you passed, so if the datafile "
             "request 404s next, this is why."
         ),

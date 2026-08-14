@@ -78,7 +78,7 @@ def _require_sdk_key(sdk_key: str, fn_name: str) -> str:
         raise ValueError(
             f"{fn_name} was called without an SDK key. Pass the environment "
             'SDK key (it looks like "sdk_production_xxxxxxxx"), which you can '
-            "copy from Settings, then Environments, in the A vs B dashboard."
+            "copy from Environments in the project sidebar, in the A vs B dashboard."
         )
     return trimmed
 
@@ -180,7 +180,7 @@ _STREAM_UNAVAILABLE_REASON = (
     'Streaming is on, but there is no stream endpoint to connect to: the '
     'datafile carries no "streamEndpoint" field and no stream_endpoint option '
     "was passed. Republish the environment from the A vs B dashboard "
-    "(Settings, then Environments) to pick up the field, or pass "
+    "(Environments in the project sidebar) to pick up the field, or pass "
     "stream_endpoint explicitly. Polling stays on in the meantime, so flag "
     "changes still arrive, just on the polling interval instead of instantly."
 )
