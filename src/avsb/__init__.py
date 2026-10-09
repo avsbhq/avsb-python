@@ -10,7 +10,7 @@ Quickstart::
     server.on_ready()
 
     ctx = SingleContext.user(key="u_1", plan="pro")
-    if server.get_bool_flag("checkout-v2", False, ctx):
+    if server.get_bool_flag("checkout_v2", False, ctx):
         ...
 
     server.track("checkout_completed", ctx, revenue=49.99)
@@ -20,8 +20,9 @@ Evaluation is local: the SDK holds the published configuration in memory and
 decides in microseconds, with no proxy to run and no per-flag network call.
 
 The synchronous client needs no dependencies at all. For asyncio, install
-``avsb[async]`` and import :class:`avsb.async_client.AsyncAvsbServer`, which
-mirrors the same surface with awaitable I/O.
+``avsb[async]`` and import ``AsyncAvsbServer`` from its own module (the import
+line is at the end of this file), which mirrors the same surface with awaitable
+I/O.
 
 This package ships ``py.typed``, so every signature here reaches mypy, pyright,
 and your editor.
@@ -151,7 +152,8 @@ __all__ = [
 ]
 
 #: ``AsyncAvsbServer`` is deliberately NOT re-exported here. Importing it
-#: requires httpx, and ``pip install avsb`` must stay dependency-free, so a
-#: bare ``import avsb`` cannot pull it in. Import it from its own module:
+#: requires the ``avsb[async]`` extra, and ``pip install avsb`` must stay
+#: dependency-free, so a bare ``import avsb`` cannot pull it in. Import it from
+#: its own module:
 #:
 #:     from avsb.async_client import AsyncAvsbServer

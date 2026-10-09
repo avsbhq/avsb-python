@@ -457,9 +457,12 @@ class EvaluationCore:
             return
         self._warned_type_mismatch.add(marker)
         correct = _GETTER_FOR_TYPE.get(declared, "get_flag")
+        # Name the getter by its real method name: "boolean" is read with
+        # get_bool_flag, and get_boolean_flag does not exist (N1-18).
+        used = _GETTER_FOR_TYPE.get(requested, f"get_{requested}_flag")
         self.logger.warn(
             f'Flag "{flag_key}" is declared as a {declared} flag, but it was '
-            f"read with get_{requested}_flag, so the default value came back "
+            f"read with {used}, so the default value came back "
             f"instead of a coerced one. Call {correct}, or change the flag's "
             "type in the dashboard. This warning is logged once per flag and "
             "getter."

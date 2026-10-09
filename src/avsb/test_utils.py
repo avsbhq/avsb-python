@@ -8,7 +8,7 @@ Every helper here is real and supported, and none needs an extra::
 
     def test_new_checkout_is_on_by_default() -> None:
         datafile = build_minimal_datafile(
-            flags=[build_boolean_flag_entry("checkout-v2", default_value=True)]
+            flags=[build_boolean_flag_entry("checkout_v2", default_value=True)]
         )
         server = AvsbServer(
             "sdk_test_conformancefixture01",
@@ -17,7 +17,7 @@ Every helper here is real and supported, and none needs an extra::
             events_enabled=False,
         )
         assert server.get_bool_flag(
-            "checkout-v2", False, SingleContext.user(key="u_1")
+            "checkout_v2", False, SingleContext.user(key="u_1")
         )
 
 Passing ``datafile=`` makes the client ready without an ``on_ready()`` call, so

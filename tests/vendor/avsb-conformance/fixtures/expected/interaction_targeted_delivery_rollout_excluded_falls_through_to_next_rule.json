@@ -1,0 +1,27 @@
+{
+  "case": "interaction_targeted_delivery_rollout_excluded_falls_through_to_next_rule",
+  "family": "interaction",
+  "description": "A visitor outside a 0.3 targeted delivery rollout (allocation bucket 9000) is not served the default: evaluation continues to the next rule, here an unrestricted targeted delivery rule. A port that returns the default on exclusion, instead of continuing, fails here.",
+  "datafile": "datafiles/interaction_targeted_delivery_rollout_excluded_falls_through_to_next_rule.datafile.json",
+  "context": "contexts/interaction_targeted_delivery_rollout_excluded_falls_through_to_next_rule.context.json",
+  "flagKey": "interaction_targeted_delivery_fall_through",
+  "defaultValue": false,
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_td_alloc",
+    "bucket": 9000,
+    "why": "Far outside the 0.3 rollout, so only the second rule can serve it.",
+    "resolvedKey": "td-next-3580"
+  },
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_td_everyone",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_td_alloc\" excluded by traffic allocation (hash 9000 >= threshold 3000)",
+      "rule \"rule_td_everyone\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

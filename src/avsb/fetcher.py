@@ -18,6 +18,7 @@ wrong environment".
 from __future__ import annotations
 
 import json
+import ssl
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -34,6 +35,15 @@ DEFAULT_FETCH_TIMEOUT_SECONDS = 10.0
 #: Fetches raw bytes from a URL. Injected so tests never touch the network.
 DatafileTransport = Callable[[str, float], bytes]
 
+#: Returned (never raised) by ``on_ready()`` when the client has no SDK key.
+MISSING_SDK_KEY_MESSAGE = (
+    "A vs B has no SDK key, so there is no datafile to fetch and every flag "
+    "serves its default value. Pass the environment SDK key to "
+    'AvsbServer(sdk_key=...): it looks like "sdk_production_xxxxxxxx", and you '
+    "can copy it from Environments in the project sidebar of the A vs B "
+    "dashboard."
+)
+
 
 class DatafileFetchError(Exception):
     """A datafile fetch failed. Carries an actionable message.
@@ -43,12 +53,22 @@ class DatafileFetchError(Exception):
     of crashing it.
     """
 
-    def __init__(self, message: str, *, url: str, status: int | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        url: str,
+        status: int | None = None,
+        retryable: bool = True,
+    ) -> None:
         super().__init__(message)
-        #: The URL that was tried.
+        #: The URL that was tried, or ``""`` when none could be built.
         self.url = url
         #: The HTTP status, or ``None`` for a transport-level failure.
         self.status = status
+        #: ``False`` when retrying cannot help (no SDK key at all), so the
+        #: client does not poll a request that can never succeed.
+        self.retryable = retryable
 
 
 @dataclass(frozen=True)
@@ -106,14 +126,63 @@ def status_message(status: int, url: str, sdk_key: str) -> str:
     )
 
 
+def is_certificate_failure(error: BaseException) -> bool:
+    """Did TLS certificate verification fail somewhere in this error's chain?
+
+    urllib wraps the SSL error in ``URLError.reason`` and httpx chains it as
+    the cause, so both are walked before falling back to OpenSSL's own text.
+    """
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, ssl.SSLCertVerificationError):
+            return True
+        if isinstance(getattr(current, "reason", None), ssl.SSLCertVerificationError):
+            return True
+        current = current.__cause__ or current.__context__
+    return "CERTIFICATE_VERIFY_FAILED" in str(error)
+
+
 def transport_message(error: Exception, url: str) -> str:
     """Build the actionable message for a transport-level failure."""
+    if is_certificate_failure(error):
+        # A python.org install on macOS ships without the root certificates
+        # the CDN's chain needs, until its bundled installer is run (N1-18).
+        return (
+            f"A vs B datafile could not be fetched from {url}: this Python "
+            f"could not verify the CDN's TLS certificate ({error}). Python is "
+            "missing the root certificates it needs, which is common on a "
+            "python.org install for macOS: run the Install Certificates "
+            "command in that Python's folder under Applications, or point the "
+            "SSL_CERT_FILE environment variable at a CA bundle such as "
+            f"/etc/ssl/cert.pem. {_curl_hint(url)}"
+        )
     return (
         f"A vs B datafile could not be reached at {url}: {error}. This process "
         "could not open the connection at all, which usually means DNS, an "
         "egress firewall, or a proxy that needs configuring for "
         f"cdn.avsb.cloud. {_curl_hint(url)}"
     )
+
+
+def datafile_target(
+    sdk_key: str, *, url: str | None = None, cdn_host: str | None = None
+) -> str:
+    """The URL to fetch the datafile from.
+
+    Raises :class:`DatafileFetchError` (not retryable) when there is no SDK key
+    to build one from. It used to be a ``ValueError`` that escaped
+    ``on_ready()``, which the docs promise never raises (N1-18).
+    """
+    if url:
+        return url
+    try:
+        return datafile_url(sdk_key, cdn_host) if cdn_host else datafile_url(sdk_key)
+    except ValueError as exc:
+        raise DatafileFetchError(
+            MISSING_SDK_KEY_MESSAGE, url="", retryable=False
+        ) from exc
 
 
 def fetch_datafile(
@@ -127,11 +196,9 @@ def fetch_datafile(
     """Fetch and parse the datafile.
 
     Raises :class:`DatafileFetchError` with an actionable message on any
-    failure, including malformed JSON.
+    failure, including malformed JSON and a missing SDK key.
     """
-    target = url or (
-        datafile_url(sdk_key, cdn_host) if cdn_host else datafile_url(sdk_key)
-    )
+    target = datafile_target(sdk_key, url=url, cdn_host=cdn_host)
     get = transport or urllib_transport
 
     try:

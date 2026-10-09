@@ -23,7 +23,7 @@ Then in a view::
 
     def checkout(request):
         ctx = SingleContext.user(key=str(request.user.pk))
-        if request.avsb.get_bool_flag("checkout-v2", False, ctx):
+        if request.avsb.get_bool_flag("checkout_v2", False, ctx):
             ...
 
 Optionally set ``AVSB_CONTEXT_FROM`` to a callable taking the request and

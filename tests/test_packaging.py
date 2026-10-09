@@ -61,6 +61,17 @@ def test_the_typed_classifier_is_declared() -> None:
 
 
 @requires_tomllib
+def test_the_reported_version_is_the_manifest_version() -> None:
+    """Heartbeats and the User-Agent report ``SDK_VERSION``, read from the
+    installed metadata. A stale install would report an older number than the
+    one being published, which is the drift the JavaScript SDKs shipped
+    (N0-9); an uninstalled source tree must say it does not know."""
+    from avsb.version import SDK_VERSION, UNKNOWN_VERSION
+
+    assert SDK_VERSION in (_pyproject()["project"]["version"], UNKNOWN_VERSION)
+
+
+@requires_tomllib
 def test_mypy_is_configured_as_a_local_gate() -> None:
     mypy = _pyproject()["tool"]["mypy"]
     assert mypy["strict"] is True

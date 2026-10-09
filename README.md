@@ -43,7 +43,7 @@ server.on_ready()
 
 ctx = SingleContext.user(key="u_1", plan="pro")
 
-if server.get_bool_flag("checkout-v2", False, ctx):
+if server.get_bool_flag("checkout_v2", False, ctx):
     serve_new_checkout()
 
 server.track("checkout_completed", ctx, revenue=49.99)
@@ -58,7 +58,7 @@ with AvsbServer(sdk_key=os.environ["AVSB_SDK_KEY"]) as server:
     ...
 ```
 
-Your SDK key comes from the A vs B dashboard: **Settings**, then **Environments**. It looks like `sdk_production_ttqm0eaj4vth1krcb2xn`. Keep it in an environment variable.
+Your SDK key comes from the A vs B dashboard: **Environments**, in the project sidebar. It looks like `sdk_production_ttqm0eaj4vth1krcb2xn`. Keep it in an environment variable.
 
 ---
 
@@ -76,7 +76,7 @@ def get_init_result(self) -> InitResult | None
 
 `on_ready()` fetches your configuration and starts two background threads: one that refreshes it every 30 seconds (jittered), and one that delivers events every 5 seconds. Call it once at startup, and call `close()` at shutdown so queued events are delivered rather than lost.
 
-**It never raises.** A failed fetch comes back inside the result:
+**It never raises**, not even for an empty SDK key. A failed fetch comes back inside the result:
 
 ```python
 class InitResult:
@@ -136,7 +136,7 @@ ctx = MultiContext.of(
     SingleContext.of("organization", "org_acme", tier="enterprise"),
 )
 
-flag = server.get_bool_flag("enterprise-feature", False, ctx)
+flag = server.get_bool_flag("enterprise_feature", False, ctx)
 ```
 
 ```python
@@ -195,10 +195,10 @@ def get_all_flags(self, context: EvalContext | None = None, *,
 ```
 
 ```python
-show_banner = server.get_bool_flag("promo-banner", False, ctx)
-theme       = server.get_string_flag("ui-theme", "light", ctx)
-max_retries = server.get_number_flag("max-retries", 3.0, ctx)
-config      = server.get_json_flag("api-config", {"timeout": 5000}, ctx)
+show_banner = server.get_bool_flag("promo_banner", False, ctx)
+theme       = server.get_string_flag("ui_theme", "light", ctx)
+max_retries = server.get_number_flag("max_retries", 3.0, ctx)
+config      = server.get_json_flag("api_config", {"timeout": 5000}, ctx)
 ```
 
 A `default_value` is required on every call, so a flag read always has a defined answer.
@@ -230,7 +230,7 @@ class Flag:
 ```
 
 ```python
-flag = server.get_flag("checkout-v2", False, ctx)
+flag = server.get_flag("checkout_v2", False, ctx)
 print(flag.value, flag.variation_key, flag.source)
 for reason in flag.reasons:
     print(reason)
@@ -293,7 +293,7 @@ A flag serving its default variation is not enabled, however truthy that default
 from avsb import DecideOption
 
 flag = server.get_flag(
-    "checkout-v2", False, ctx,
+    "checkout_v2", False, ctx,
     decide_options=[DecideOption.DISABLE_EXPOSURE],
 )
 ```
@@ -319,7 +319,7 @@ def for_user(self, context: EvalContext) -> UserBoundClient
 ```python
 avsb = server.for_user(SingleContext.user(key=user_id, plan=plan))
 
-if avsb.get_bool_flag("checkout-v2", False):
+if avsb.get_bool_flag("checkout_v2", False):
     ...
 avsb.track("checkout_started")
 ```
@@ -416,7 +416,7 @@ from avsb.async_client import AsyncAvsbServer
 async def main() -> None:
     async with AsyncAvsbServer(sdk_key=os.environ["AVSB_SDK_KEY"]) as server:
         ctx = SingleContext.user(key="u_1", plan="pro")
-        if server.get_bool_flag("checkout-v2", False, ctx):
+        if server.get_bool_flag("checkout_v2", False, ctx):
             ...
         await server.track("checkout_started", ctx)
 ```
@@ -466,7 +466,7 @@ app.add_middleware(AvsbFastApiMiddleware, server=server)
 @app.get("/checkout")
 async def checkout(request: Request) -> dict[str, bool]:
     ctx = SingleContext.user(key=request.headers["x-user-id"])
-    return {"new_checkout": request.state.avsb.get_bool_flag("checkout-v2", False, ctx)}
+    return {"new_checkout": request.state.avsb.get_bool_flag("checkout_v2", False, ctx)}
 ```
 
 Pass `context_from` to get a bound client on every request:
@@ -482,7 +482,7 @@ app.add_middleware(
 
 @app.get("/checkout")
 async def checkout(request: Request) -> dict[str, bool]:
-    return {"new_checkout": request.state.avsb_user.get_bool_flag("checkout-v2", False)}
+    return {"new_checkout": request.state.avsb_user.get_bool_flag("checkout_v2", False)}
 ```
 
 `AvsbAsgiMiddleware` from `avsb.middleware.asgi` is the same class under a framework-neutral name, and works with any ASGI app.
@@ -502,7 +502,7 @@ AvsbFlask(app, server=server)
 @app.get("/checkout")
 def checkout():
     ctx = SingleContext.user(key=g.user_id)
-    return {"new_checkout": g.avsb.get_bool_flag("checkout-v2", False, ctx)}
+    return {"new_checkout": g.avsb.get_bool_flag("checkout_v2", False, ctx)}
 ```
 
 ### Django
@@ -520,7 +520,7 @@ MIDDLEWARE = [..., "avsb.middleware.django.AvsbDjangoMiddleware"]
 ```python
 def checkout(request):
     ctx = SingleContext.user(key=str(request.user.pk))
-    if request.avsb.get_bool_flag("checkout-v2", False, ctx):
+    if request.avsb.get_bool_flag("checkout_v2", False, ctx):
         ...
 ```
 
@@ -553,7 +553,7 @@ server.on_ready()
 api.set_provider(AvsbOpenFeatureProvider(server))
 
 client = api.get_client()
-show_new_checkout = client.get_boolean_value("checkout-v2", False)
+show_new_checkout = client.get_boolean_value("checkout_v2", False)
 ```
 
 Multi-kind evaluation contexts map to A vs B multi-contexts, so organization-keyed targeting keeps working through OpenFeature:
@@ -565,7 +565,7 @@ ctx = EvaluationContext(
     targeting_key="u_1",
     attributes={"organization": {"key": "org_acme", "tier": "enterprise"}},
 )
-client.get_boolean_value("enterprise-feature", False, ctx)
+client.get_boolean_value("enterprise_feature", False, ctx)
 ```
 
 Source mapping: `rule`, `holdout`, and `bandit` become `TARGETING_MATCH`; overrides become `STATIC`; `sticky` becomes `CACHED`; `default` and `not_found` become `DEFAULT`; `disabled` becomes `DISABLED`; and `not_ready` becomes an error with code `PROVIDER_NOT_READY`, so an uninitialised SDK is visible to OpenFeature's own error handling.
@@ -606,9 +606,9 @@ class StickyBucketService(Protocol):
 ### Runtime overrides
 
 ```python
-server.set_override("checkout-v2", "treatment")
-server.set_override_for_context("checkout-v2", "u_123", "control")
-server.clear_override("checkout-v2")
+server.set_override("checkout_v2", "treatment")
+server.set_override_for_context("checkout_v2", "u_123", "control")
+server.clear_override("checkout_v2")
 server.clear_all_overrides()
 ```
 
@@ -653,10 +653,24 @@ server = AvsbServer(sdk_key=..., logger=NoopLogger())
 
 - An SDK key that does not look like one, naming what it looks like instead.
 - A configuration fetch failure, with the URL tried, the status, and a curl to reproduce.
+- A missing SDK key, as a failed `on_ready()` result that says where to copy the key.
+- A TLS certificate this Python cannot verify, naming the fix (see below).
 - Evaluating with no context, once per process, naming the factory call to add.
 - Reading a flag with the wrong typed getter, naming the right one.
 - A full event queue or decision log, with the count dropped.
 - Events lost after every retry, with the endpoint and last error.
+
+### `CERTIFICATE_VERIFY_FAILED` on macOS
+
+The synchronous client fetches with the standard library, so it trusts the certificates your Python was built with. A python.org install on macOS starts without them, and `on_ready()` then reports that it could not verify the CDN's certificate. Fix it once per Python install, either way:
+
+```bash
+# Run the certificate installer that ships with that Python (adjust the version)
+open "/Applications/Python 3.13/Install Certificates.command"
+
+# Or point Python at the system bundle
+export SSL_CERT_FILE=/etc/ssl/cert.pem
+```
 
 ---
 
@@ -676,7 +690,7 @@ from avsb.test_utils import build_boolean_flag_entry, build_minimal_datafile
 @pytest.fixture()
 def server():
     datafile = build_minimal_datafile(
-        flags=[build_boolean_flag_entry("checkout-v2", default_value=True)]
+        flags=[build_boolean_flag_entry("checkout_v2", default_value=True)]
     )
     client = AvsbServer(
         "sdk_test_conformancefixture01",
@@ -688,7 +702,7 @@ def server():
     client.close()
 
 def test_new_checkout_is_on(server):
-    assert server.get_bool_flag("checkout-v2", False, SingleContext.user(key="u_1"))
+    assert server.get_bool_flag("checkout_v2", False, SingleContext.user(key="u_1"))
 ```
 
 `polling_enabled=False` and `events_enabled=False` keep the test run off the network entirely.
@@ -753,7 +767,7 @@ from ldclient.config import Config
 
 ldclient.set_config(Config("sdk-key"))
 client = ldclient.get()
-value = client.variation("checkout-v2", {"key": "alice", "custom": {"plan": "pro"}}, False)
+value = client.variation("checkout_v2", {"key": "alice", "custom": {"plan": "pro"}}, False)
 ```
 
 ```python
@@ -762,7 +776,7 @@ from avsb import AvsbServer, SingleContext
 
 server = AvsbServer(sdk_key=os.environ["AVSB_SDK_KEY"])
 server.on_ready()
-value = server.get_bool_flag("checkout-v2", False, SingleContext.user(key="alice", plan="pro"))
+value = server.get_bool_flag("checkout_v2", False, SingleContext.user(key="alice", plan="pro"))
 ```
 
 Multi-context is a constructor, not a builder:
@@ -784,7 +798,7 @@ import statsig
 from statsig import StatsigUser
 
 statsig.initialize("secret-key")
-gate = statsig.check_gate(StatsigUser(user_id="alice", custom={"plan": "pro"}), "checkout-v2")
+gate = statsig.check_gate(StatsigUser(user_id="alice", custom={"plan": "pro"}), "checkout_v2")
 statsig.log_event(user, "purchase", value=49.99)
 ```
 
@@ -796,7 +810,7 @@ server = AvsbServer(sdk_key=os.environ["AVSB_SDK_KEY"])
 server.on_ready()
 
 ctx = SingleContext.user(key="alice", plan="pro")
-gate = server.get_bool_flag("checkout-v2", False, ctx)
+gate = server.get_bool_flag("checkout_v2", False, ctx)
 server.track("purchase", ctx, revenue=49.99)
 ```
 

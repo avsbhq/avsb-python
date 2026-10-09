@@ -16,7 +16,7 @@ Register it once at startup::
     api.set_provider(AvsbOpenFeatureProvider(server))
 
     client = api.get_client()
-    show_new_checkout = client.get_boolean_value("checkout-v2", False)
+    show_new_checkout = client.get_boolean_value("checkout_v2", False)
 
 Two things were broken before and are fixed here, because either one makes the
 provider look registered and then fail at evaluation:
@@ -187,10 +187,16 @@ def _build_provider_class() -> Any:
     abstract_provider = provider_module.AbstractProvider
     metadata_class = provider_module.Metadata
 
+    # Held in an Any-typed name: older SDK layouts have no ErrorCode, and
+    # putting None into the imported class's own name is a type error wherever
+    # the SDK is installed with its types (and an unused ignore where it is not).
+    error_code_enum: Any = None
     try:
         from openfeature.exception import ErrorCode
     except ImportError:  # pragma: no cover - older SDK layouts
-        ErrorCode = None  # type: ignore[assignment]
+        pass
+    else:
+        error_code_enum = ErrorCode
 
     reason_for_source: dict[str, Any] = {
         "rule": Reason.TARGETING_MATCH,
@@ -284,7 +290,7 @@ def _build_provider_class() -> Any:
             flag_key: str,
             default_value: Any,
             evaluation_context: "EvaluationContext | None",
-        ) -> Any:
+        ) -> "FlagResolutionDetails[Any]":
             context = eval_context_from_openfeature(evaluation_context)
             flag = self._server.get_flag(flag_key, default_value, context)
             reason = reason_for_source.get(flag.source, Reason.UNKNOWN)
@@ -299,8 +305,8 @@ def _build_provider_class() -> Any:
                     "source": flag.source,
                 },
             }
-            if flag.source == "not_ready" and ErrorCode is not None:
-                details["error_code"] = ErrorCode.PROVIDER_NOT_READY
+            if flag.source == "not_ready" and error_code_enum is not None:
+                details["error_code"] = error_code_enum.PROVIDER_NOT_READY
                 details["error_message"] = (
                     "The A vs B client has no datafile yet, so this flag "
                     "returned the default value. Call on_ready() on the client "

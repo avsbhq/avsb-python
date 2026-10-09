@@ -106,10 +106,12 @@ class PollingThread:
         try:
             self._poll()
         except Exception as exc:  # noqa: BLE001 - a background thread
+            # The cause goes in the message itself, not only in the fields: a
+            # logger that drops structured fields must still say why.
             self._logger.error(
-                "A vs B datafile refresh failed, so the flag configuration "
-                "already loaded is being kept. The next attempt runs on the "
-                "polling interval.",
+                f"A vs B datafile refresh failed ({exc}), so the flag "
+                "configuration already loaded is being kept. The next attempt "
+                "runs on the polling interval.",
                 {"error": str(exc)},
             )
 

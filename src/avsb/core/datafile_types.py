@@ -66,8 +66,10 @@ class FlagDatafileRule:
     #: ``"organization.key"``. v1 datafiles persist the literal
     #: ``"userId"``, which resolves to the primary context's key.
     hash_attribute: str
-    #: ``None`` means "no allocation gate": everyone who matches the
-    #: audience is in. ab_test rules only.
+    #: Share of the rule's audience that is in, 0.0 to 1.0: a rollout on a
+    #: targeted_delivery rule, the experiment's traffic on an ab_test rule.
+    #: ``None`` means "no allocation gate": everyone who matches the audience
+    #: is in.
     traffic_allocation: float | None
     variations: list[VariationAllocation]
     holdout_id: str | None = None

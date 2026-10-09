@@ -29,7 +29,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from typing import Callable, Protocol, Sequence
+from typing import Any, Callable, Protocol, Sequence, TypeVar
 
 from .backoff import BackoffState, next_backoff, parse_retry_after, reset_backoff
 from .core.events import ExposureEvent, MetricEvent, PurchaseOrder
@@ -166,7 +166,7 @@ class ServerTracker:
         """Enqueue a conversion or metric event. Stamps ``event_id``."""
         self._enqueue(self._metrics, event.stamped(), "Metric")
 
-    def _enqueue(self, queue: list, event: object, label: str) -> None:
+    def _enqueue(self, queue: list[Any], event: object, label: str) -> None:
         if self._closed:
             self._logger.warn(
                 f"{label} event dropped: the A vs B client is already closed. "
@@ -232,10 +232,10 @@ class ServerTracker:
                 self._exposures = []
                 self._metrics = []
 
-            for chunk in _chunk(exposures, self._batch_size):
-                self._send_batch(self._batch_url, "events", chunk)
-            for chunk in _chunk(metrics, self._batch_size):
-                self._send_batch(self._metric_url, "metricEvents", chunk)
+            for exposure_chunk in _chunk(exposures, self._batch_size):
+                self._send_batch(self._batch_url, "events", exposure_chunk)
+            for metric_chunk in _chunk(metrics, self._batch_size):
+                self._send_batch(self._metric_url, "metricEvents", metric_chunk)
 
     def track_purchase(self, visitor_id: str, order: PurchaseOrder) -> None:
         """Send a purchase immediately, with the same retry curve as a batch.
@@ -295,8 +295,10 @@ class ServerTracker:
             # promptly instead of waiting out the interval.
             self._wake.wait(self._options.flush_interval_seconds)
             self._wake.clear()
+            # wait() lets close() run on another thread; mypy narrows
+            # self._closed from the loop condition and cannot see that.
             if self._closed:
-                return
+                return  # type: ignore[unreachable]
             try:
                 self.flush()
             except Exception as exc:  # noqa: BLE001 - a background thread
@@ -373,5 +375,8 @@ def _encode(payload: dict[str, object]) -> bytes:
     return json.dumps(payload, separators=(",", ":")).encode("utf-8")
 
 
-def _chunk(items: list, size: int) -> list[list]:
+_T = TypeVar("_T")
+
+
+def _chunk(items: list[_T], size: int) -> list[list[_T]]:
     return [items[i : i + size] for i in range(0, len(items), size)]

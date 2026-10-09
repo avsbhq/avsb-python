@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "avsb"
-version = "1.0.0"
+version = "1.0.1"
 description = "A vs B feature flags and experimentation for Python servers."
 requires-python = ">=3.10"
 license = "MIT"

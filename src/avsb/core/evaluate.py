@@ -22,6 +22,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from .allocation import allocation_exclusion
 from .audience import evaluate_audience
 from .bandits import BanditModel, BanditModelStore, evaluate_bandit
 from .context import bucketing_key, get_context_by_kind, is_multi_context
@@ -398,6 +399,16 @@ def evaluate_flag(
         if rule.type == "targeted_delivery":
             if not rule.variations:
                 continue
+            # A targeted delivery rule below 100 percent is a ROLLOUT: serve
+            # the variation to that share of the audience and let everyone
+            # else fall through to the next rule, exactly as an ab_test
+            # rule's allocation does (N1-1). The gate sits after the
+            # empty-variations skip, so a rule with nothing to serve stays a
+            # silent skip.
+            td_exclusion = allocation_exclusion(rule, hash_value, flag_key)
+            if td_exclusion is not None:
+                reasons.append(td_exclusion)
+                continue
             target_var = _get_variation_value(flag, rule.variations[0].variation_id)
             target_key = target_var.key if target_var else None
             reasons.append(
@@ -415,21 +426,11 @@ def evaluate_flag(
             )
 
         elif rule.type == "ab_test":
-            # Threshold math is a FLOAT comparison against the raw product,
-            # never a truncated or rounded integer. A 0.12345 rollout puts
-            # the threshold at 1234.5: bucket 1234 is inside it, while a
-            # port that truncates to 1234 excludes that context and
-            # diverges. Boundary fixtures lock this.
-            alloc_hash = murmurhash3(hash_value + flag_key + "__" + rule.id) % 10_000
-            if (
-                rule.traffic_allocation is not None
-                and alloc_hash >= rule.traffic_allocation * 10_000
-            ):
-                threshold = rule.traffic_allocation * 10_000
-                reasons.append(
-                    f'rule "{rule.id}" excluded by traffic allocation '
-                    f"(hash {alloc_hash} >= threshold {js_number_str(threshold)})"
-                )
+            # Check traffic allocation (see core/allocation.py for the
+            # float-threshold rule every port must copy).
+            ab_exclusion = allocation_exclusion(rule, hash_value, flag_key)
+            if ab_exclusion is not None:
+                reasons.append(ab_exclusion)
                 continue
 
             bucket_hash = murmurhash3(hash_value + flag_key) % 10_000

@@ -2,18 +2,18 @@
   "schema": "../schema.json",
   "generatedFrom": {
     "package": "@avsbhq/core",
-    "version": "1.4.0"
+    "version": "1.6.0"
   },
   "families": {
     "core": 12,
     "typed": 5,
-    "edge": 5,
+    "edge": 6,
     "operator": 24,
-    "boundary": 11,
-    "interaction": 11,
+    "boundary": 14,
+    "interaction": 12,
     "bandit": 8
   },
-  "caseCount": 76,
+  "caseCount": 81,
   "cases": [
     {
       "case": "flag_not_found_returns_default",
@@ -470,6 +470,36 @@
       "family": "bandit",
       "description": "A bandit config declaring an empty actions list is skipped with a reason naming the bandit key.",
       "expected": "expected/bandit_no_actions_is_skipped_loudly.json"
+    },
+    {
+      "case": "boundary_targeted_delivery_fractional_bucket_below_threshold",
+      "family": "boundary",
+      "description": "A targeted delivery rollout of 0.12345 puts the threshold at 1234.5. Allocation bucket 1234 is below it, so the rule serves its variation. A port that never applies the allocation to targeted delivery passes this case; a port that floors the threshold to 1234 fails it.",
+      "expected": "expected/boundary_targeted_delivery_fractional_bucket_below_threshold.json"
+    },
+    {
+      "case": "boundary_targeted_delivery_fractional_bucket_above_threshold",
+      "family": "boundary",
+      "description": "Allocation bucket 1235 is above the 1234.5 threshold, so the targeted delivery rule is skipped with the exclusion reason and the flag serves its default. This is the case a port that ignores the allocation on targeted delivery fails (it serves the rule).",
+      "expected": "expected/boundary_targeted_delivery_fractional_bucket_above_threshold.json"
+    },
+    {
+      "case": "boundary_targeted_delivery_integer_30pct_bucket_on_threshold",
+      "family": "boundary",
+      "description": "Allocation bucket 3000 against a 0.3 targeted delivery rollout, the exact rule the production QA found serving everyone. Which side of the threshold it lands on is whatever the double multiply produces; every port must record the same side as the reference.",
+      "expected": "expected/boundary_targeted_delivery_integer_30pct_bucket_on_threshold.json"
+    },
+    {
+      "case": "interaction_targeted_delivery_rollout_excluded_falls_through_to_next_rule",
+      "family": "interaction",
+      "description": "A visitor outside a 0.3 targeted delivery rollout (allocation bucket 9000) is not served the default: evaluation continues to the next rule, here an unrestricted targeted delivery rule. A port that returns the default on exclusion, instead of continuing, fails here.",
+      "expected": "expected/interaction_targeted_delivery_rollout_excluded_falls_through_to_next_rule.json"
+    },
+    {
+      "case": "edge_targeted_delivery_empty_variations_skip_before_allocation",
+      "family": "edge",
+      "description": "A targeted delivery rule with no variations and a 0 allocation is skipped SILENTLY: the empty-variations check runs before the allocation gate, so no exclusion reason is recorded. Locks the order of the two checks, which the reasons array exposes.",
+      "expected": "expected/edge_targeted_delivery_empty_variations_skip_before_allocation.json"
     }
   ]
 }

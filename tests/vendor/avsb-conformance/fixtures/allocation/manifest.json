@@ -1,0 +1,42 @@
+{
+  "schema": "../../schema.allocation.json",
+  "family": "allocation",
+  "generatedFrom": {
+    "package": "@avsbhq/core",
+    "version": "1.6.0"
+  },
+  "contextsPerFixture": 200,
+  "fixtureCount": 6,
+  "fixtures": [
+    {
+      "case": "targeted_delivery_allocation_0.05",
+      "description": "A 5 percent targeted delivery rollout, the value the public API docs use (\"0.05 is a 5% rollout\"). summary.served records how many of the 200 contexts the reference serves.",
+      "file": "targeted_delivery_allocation_0.05.json"
+    },
+    {
+      "case": "targeted_delivery_allocation_0.3",
+      "description": "The 30 percent rollout the production QA found serving all 200 of 200 visitors. summary.served records how many of these 200 contexts the reference serves.",
+      "file": "targeted_delivery_allocation_0.3.json"
+    },
+    {
+      "case": "targeted_delivery_allocation_0.5",
+      "description": "A 50 percent targeted delivery rollout. summary.served records how many of the 200 contexts the reference serves.",
+      "file": "targeted_delivery_allocation_0.5.json"
+    },
+    {
+      "case": "targeted_delivery_allocation_fractional_boundary",
+      "description": "A 0.12345 rollout: the threshold is 1234.5, half a bucket from any integer. The first two contexts are searched keys on allocation buckets 1234 (served) and 1235 (not served); a port that floors the threshold disagrees on the first one.",
+      "file": "targeted_delivery_allocation_fractional_boundary.json"
+    },
+    {
+      "case": "targeted_delivery_allocation_1.0",
+      "description": "A 100 percent rollout: every one of the 200 contexts is served.",
+      "file": "targeted_delivery_allocation_1.0.json"
+    },
+    {
+      "case": "targeted_delivery_allocation_null",
+      "description": "No allocation at all (null): the rule has no gate and serves all 200 contexts, exactly as targeted delivery behaved before rollouts existed.",
+      "file": "targeted_delivery_allocation_null.json"
+    }
+  ]
+}

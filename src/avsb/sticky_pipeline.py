@@ -70,10 +70,12 @@ class StickyPipeline:
         try:
             assignment = service.lookup(visitor_id, flag_key)
         except Exception as exc:  # noqa: BLE001 - a store outage is not fatal
+            # The cause goes in the message itself, not only in the fields: a
+            # logger that drops structured fields must still say why.
             self._logger.warn(
-                "A vs B sticky-bucket lookup failed, so this evaluation ran "
-                "without it and may assign a different variation than the one "
-                "stored. Flag evaluation itself is unaffected.",
+                f"A vs B sticky-bucket lookup failed ({exc}), so this evaluation "
+                "ran without it and may assign a different variation than the "
+                "one stored. Flag evaluation itself is unaffected.",
                 {"flag_key": flag_key, "error": str(exc)},
             )
             return None
@@ -118,8 +120,8 @@ class StickyPipeline:
             service.save(visitor_id, flag_key, assignment)
         except Exception as exc:  # noqa: BLE001 - fire and forget by contract
             self._logger.warn(
-                "A vs B could not save a sticky-bucket assignment, so this "
-                "visitor may be re-bucketed on a later request.",
+                f"A vs B could not save a sticky-bucket assignment ({exc}), so "
+                "this visitor may be re-bucketed on a later request.",
                 {"flag_key": flag_key, "error": str(exc)},
             )
 

@@ -1,0 +1,27 @@
+{
+  "case": "boundary_targeted_delivery_integer_30pct_bucket_on_threshold",
+  "family": "boundary",
+  "description": "Allocation bucket 3000 against a 0.3 targeted delivery rollout, the exact rule the production QA found serving everyone. Which side of the threshold it lands on is whatever the double multiply produces; every port must record the same side as the reference.",
+  "datafile": "datafiles/boundary_targeted_delivery_integer_30pct_bucket_on_threshold.datafile.json",
+  "context": "contexts/boundary_targeted_delivery_integer_30pct_bucket_on_threshold.context.json",
+  "flagKey": "boundary_targeted_delivery_integer_30pct",
+  "defaultValue": false,
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_td_alloc",
+    "bucket": 3000,
+    "why": "The 0.3 threshold bucket. Recorded, not predicted.",
+    "resolvedKey": "td-30-exact-33954"
+  },
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_td_alloc\" excluded by traffic allocation (hash 3000 >= threshold 3000)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

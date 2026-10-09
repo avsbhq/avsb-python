@@ -5,11 +5,24 @@ All notable changes to the `avsb` Python SDK.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - Unreleased
+
+The first release on PyPI. The `v1.0.0` tag of the mirror repository was the
+only installable copy before this, and it predates everything below.
 
 Pre-launch overhaul. The SDK could not fetch a configuration, had no way to
 record an event, and never refreshed. All three are fixed, along with the
 semantics that made Python disagree with the other A vs B SDKs.
+
+### Behaviour change to check before upgrading
+
+- **Targeted delivery rules honour their traffic allocation.** A rule set to
+  30 percent now serves its variation to 30 percent of the audience it
+  targets, where every SDK used to serve 100 percent. Visitors outside the
+  rollout fall through to the next rule, then to the flag's default. The gate
+  hashes exactly like an A/B test's traffic allocation, so a visitor is in or
+  out of a rollout identically in every A vs B SDK. A rule with no allocation
+  (`null`) still serves everyone it targets.
 
 ### Added
 
@@ -102,6 +115,20 @@ semantics that made Python disagree with the other A vs B SDKs.
 - `DecisionLog` is iterated through `.entries`, and that is what the docs say.
 - Bandit contextual-model lookup resolves `key` and `name` on a sub-context,
   matching the reference engine.
+- `import avsb` raised `ImportError`: `avsb.core` imported the datafile types
+  from the module they had moved out of.
+- `on_ready()` raised `ValueError` for an empty SDK key. It now returns a
+  failed result that says where to copy the key, and does not poll a request
+  that can never succeed. The async client does the same.
+- A TLS certificate failure (a python.org Python on macOS before its
+  certificate installer has run) is reported as such, with the fix, instead of
+  as a DNS or firewall problem.
+- The wrong-getter warning named `get_boolean_flag`, which does not exist. It
+  names `get_bool_flag`.
+- `AsyncAvsbServer` gained `is_polling()`, the one method the sync client had
+  and it lacked.
+- Sticky-store and polling failures put their cause in the log message itself,
+  so a logger that drops structured fields still says why.
 
 ### Removed
 
@@ -110,4 +137,4 @@ semantics that made Python disagree with the other A vs B SDKs.
 - `DecideOption.EXCLUDE_VARIABLES`, `IGNORE_STICKY_BUCKET`, and
   `ENABLED_FLAGS_ONLY`, which were never implemented.
 
-[Unreleased]: https://github.com/avsbhq/avsb-python/compare/v1.0.0...HEAD
+[1.0.1]: https://github.com/avsbhq/avsb-python/compare/v1.0.0...v1.0.1

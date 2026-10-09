@@ -1,0 +1,19 @@
+{
+  "case": "edge_targeted_delivery_empty_variations_skip_before_allocation",
+  "family": "edge",
+  "description": "A targeted delivery rule with no variations and a 0 allocation is skipped SILENTLY: the empty-variations check runs before the allocation gate, so no exclusion reason is recorded. Locks the order of the two checks, which the reasons array exposes.",
+  "datafile": "datafiles/edge_targeted_delivery_empty_variations_skip_before_allocation.datafile.json",
+  "context": "contexts/edge_targeted_delivery_empty_variations_skip_before_allocation.context.json",
+  "flagKey": "edge_targeted_delivery_empty_variations",
+  "defaultValue": false,
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "no rules matched, returning default variation"
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "case": "boundary_targeted_delivery_fractional_bucket_below_threshold",
+  "family": "boundary",
+  "description": "A targeted delivery rollout of 0.12345 puts the threshold at 1234.5. Allocation bucket 1234 is below it, so the rule serves its variation. A port that never applies the allocation to targeted delivery passes this case; a port that floors the threshold to 1234 fails it.",
+  "datafile": "datafiles/boundary_targeted_delivery_fractional_bucket_below_threshold.datafile.json",
+  "context": "contexts/boundary_targeted_delivery_fractional_bucket_below_threshold.context.json",
+  "flagKey": "boundary_targeted_delivery_fractional",
+  "defaultValue": false,
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_td_alloc",
+    "bucket": 1234,
+    "why": "Half a bucket below a fractional targeted delivery threshold: inside under the float comparison, outside under a floored one.",
+    "resolvedKey": "td-frac-in-1391"
+  },
+  "expected": {
+    "value": true,
+    "variationKey": "on",
+    "source": "rule",
+    "ruleId": "rule_td_alloc",
+    "ruleType": "targeted_delivery",
+    "reasons": [
+      "rule \"rule_td_alloc\" matched (targeted_delivery), serving variation \"on\""
+    ]
+  }
+}

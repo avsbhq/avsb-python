@@ -16,7 +16,7 @@ accidental full-traffic match.
 from __future__ import annotations
 
 import time
-from typing import Any, Callable
+from typing import Any, Callable, TypeGuard
 
 from .datafile_types import Condition
 from .types import AudienceEvalOptions
@@ -75,7 +75,9 @@ def _parse_minor_to_major(raw: Any, exponent: int) -> float | None:
         return None
     if minor != minor or minor in (float("inf"), float("-inf")):
         return None
-    return minor / (10**exponent)
+    # float() states what true division already does to the int, and keeps
+    # the result typed: int ** int is not a float to a type checker.
+    return minor / float(10**exponent)
 
 
 def _parse_numeric_value(raw: Any) -> float | None:
@@ -97,7 +99,8 @@ def _single_value(condition: Condition) -> Any:
     return condition.value
 
 
-def _is_finite_number(value: Any) -> bool:
+def _is_finite_number(value: Any) -> TypeGuard[int | float]:
+    # A TypeGuard, so a caller's value is known to be a number after the check.
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return False
     return value == value and value not in (float("inf"), float("-inf"))

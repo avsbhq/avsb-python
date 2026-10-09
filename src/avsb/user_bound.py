@@ -9,7 +9,7 @@ instead of threading the context through every call::
         avsb = request.state.avsb.for_user(
             SingleContext.user(key=request.state.user_id, plan="pro")
         )
-        if avsb.get_bool_flag("checkout-v2", False):
+        if avsb.get_bool_flag("checkout_v2", False):
             ...
         avsb.track("checkout_started")
 

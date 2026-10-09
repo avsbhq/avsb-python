@@ -89,14 +89,16 @@ def _resolve_attribute(
 
 
 def evaluate_audience(
-    audience: FlagDatafileAudience,
+    audience: FlagDatafileAudience | None,
     context: EvalContext,
     options: AudienceEvalOptions | None = None,
 ) -> bool:
     """Evaluate a full audience definition against a context.
 
     An audience with no rules matches everyone, matching the reference
-    engine: an empty definition is "no constraint", not "no one".
+    engine: an empty definition is "no constraint", not "no one". A missing
+    audience (``None``) is treated the same way, which is why the parameter
+    says it can be ``None``.
     """
     if audience is None or audience.rules is None:
         return True

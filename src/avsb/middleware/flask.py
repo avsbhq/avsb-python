@@ -24,7 +24,7 @@ Then in a view::
     @app.get("/checkout")
     def checkout():
         ctx = SingleContext.user(key=g.user_id)
-        if g.avsb.get_bool_flag("checkout-v2", False, ctx):
+        if g.avsb.get_bool_flag("checkout_v2", False, ctx):
             ...
 
 Pass ``context_from`` to also get ``g.avsb_user``, a client already bound to
@@ -116,12 +116,16 @@ class AvsbFlask:
         bound_server = self._server
         derive_context = self._context_from
 
-        @app.before_request
         def _attach_avsb() -> None:
             setattr(flask.g, G_KEY, bound_server)
             if derive_context is not None:
                 context = derive_context()
                 if context is not None:
                     setattr(flask.g, BOUND_G_KEY, bound_server.for_user(context))
+
+        # Registered by call rather than as a decorator: `app` is untyped (the
+        # Flask extra is optional), and an untyped decorator would erase this
+        # function's types. The registration is the same either way.
+        app.before_request(_attach_avsb)
 
         app.extensions[G_KEY] = self

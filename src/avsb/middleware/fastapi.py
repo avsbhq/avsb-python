@@ -27,7 +27,7 @@ under a name that matches how FastAPI users look for it, wired for
         ctx = SingleContext.user(key=request.headers["x-user-id"])
         return {
             "new_checkout": request.state.avsb.get_bool_flag(
-                "checkout-v2", False, ctx
+                "checkout_v2", False, ctx
             )
         }
 

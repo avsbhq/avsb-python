@@ -12,7 +12,7 @@ shutdown::
     server.on_ready()
 
     ctx = SingleContext.user(key="u_1", plan="pro")
-    if server.get_bool_flag("checkout-v2", False, ctx):
+    if server.get_bool_flag("checkout_v2", False, ctx):
         ...
 
 Evaluation is local and in-process: the client holds the datafile in memory,
@@ -106,10 +106,12 @@ class AvsbServer:
         """Create a client.
 
         :param sdk_key: The environment SDK key, shaped
-            ``sdk_<environment>_<id>``. Copy it from Settings, then
-            Environments, in the A vs B dashboard. A value that does not look
+            ``sdk_<environment>_<id>``. Copy it from Environments in the
+            project sidebar of the A vs B dashboard. A value that does not look
             like a key logs an actionable error and is used anyway, because the
-            key format can grow and the fetch is the real arbiter.
+            key format can grow and the fetch is the real arbiter. An empty key
+            makes :meth:`on_ready` return a failure that says so; it never
+            raises.
         :param datafile: A pre-loaded datafile, either a
             :class:`~avsb.FlagDatafile` or the raw dict. Supplying one makes the
             client ready immediately with no network call, which is how tests
@@ -413,7 +415,7 @@ class AvsbServer:
         it down::
 
             avsb = server.for_user(SingleContext.user(key=user_id))
-            if avsb.get_bool_flag("checkout-v2", False):
+            if avsb.get_bool_flag("checkout_v2", False):
                 ...
             avsb.track("checkout_started")
         """
@@ -548,8 +550,10 @@ class AvsbServer:
         except DatafileFetchError as exc:
             self._logger.error(str(exc))
             # Polling still starts: the next successful fetch promotes the
-            # client to ready without a restart.
-            self._start_polling()
+            # client to ready without a restart. Not when retrying cannot help
+            # (no SDK key at all), which would only repeat the same error.
+            if exc.retryable:
+                self._start_polling()
             return InitResult(success=False, source="error", error=exc)
 
         self._core.datafile = datafile

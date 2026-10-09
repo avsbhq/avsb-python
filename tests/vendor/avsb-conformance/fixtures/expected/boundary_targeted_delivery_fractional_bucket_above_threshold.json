@@ -1,0 +1,27 @@
+{
+  "case": "boundary_targeted_delivery_fractional_bucket_above_threshold",
+  "family": "boundary",
+  "description": "Allocation bucket 1235 is above the 1234.5 threshold, so the targeted delivery rule is skipped with the exclusion reason and the flag serves its default. This is the case a port that ignores the allocation on targeted delivery fails (it serves the rule).",
+  "datafile": "datafiles/boundary_targeted_delivery_fractional_bucket_above_threshold.datafile.json",
+  "context": "contexts/boundary_targeted_delivery_fractional_bucket_above_threshold.context.json",
+  "flagKey": "boundary_targeted_delivery_fractional",
+  "defaultValue": false,
+  "probe": {
+    "hash": "allocation",
+    "ruleId": "rule_td_alloc",
+    "bucket": 1235,
+    "why": "Half a bucket above the same fractional targeted delivery threshold.",
+    "resolvedKey": "td-frac-out-7526"
+  },
+  "expected": {
+    "value": false,
+    "variationKey": "off",
+    "source": "default",
+    "ruleId": null,
+    "ruleType": null,
+    "reasons": [
+      "rule \"rule_td_alloc\" excluded by traffic allocation (hash 1235 >= threshold 1234.5)",
+      "no rules matched, returning default variation"
+    ]
+  }
+}

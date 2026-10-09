@@ -1,12 +1,14 @@
 """Core evaluation engine: not part of the public SDK surface."""
 
+# The datafile wire types live in datafile_types, not types: importing them
+# from .types made `import avsb` fail with ImportError (N0-5), because the
+# package root imports this module first.
+from .datafile_types import FlagDatafile, FlagDatafileEntry
 from .types import (
     EvalContext,
     SingleContext,
     MultiContext,
     Flag,
-    FlagDatafile,
-    FlagDatafileEntry,
     FlagEvaluationDetails,
     DecideOption,
     EvaluationSource,

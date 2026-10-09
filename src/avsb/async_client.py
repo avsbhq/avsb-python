@@ -27,7 +27,7 @@ would add an event-loop round trip per flag read and buy nothing::
     async def main() -> None:
         async with AsyncAvsbServer(sdk_key=os.environ["AVSB_SDK_KEY"]) as server:
             ctx = SingleContext.user(key="u_1", plan="pro")
-            if server.get_bool_flag("checkout-v2", False, ctx):
+            if server.get_bool_flag("checkout_v2", False, ctx):
                 ...
             await server.track("checkout_started", ctx)
 
@@ -66,6 +66,7 @@ from .endpoints import resolve_heartbeat_endpoint
 from .fetcher import (
     DEFAULT_FETCH_TIMEOUT_SECONDS,
     DatafileFetchError,
+    datafile_target,
     status_message,
     transport_message,
 )
@@ -210,6 +211,15 @@ class AsyncAvsbServer:
         """The result of initialisation, or ``None`` before it was attempted."""
         return self._init_result
 
+    def is_polling(self) -> bool:
+        """Is the background datafile-refresh task running?
+
+        Mirrors :meth:`avsb.AvsbServer.is_polling`, so a health check can be
+        written once for either client.
+        """
+        task = self._poll_task
+        return task is not None and not task.done()
+
     # -- Lifecycle ----------------------------------------------------------
 
     async def on_ready(self, timeout: float | None = None) -> InitResult:
@@ -236,7 +246,10 @@ class AsyncAvsbServer:
             )
         except DatafileFetchError as exc:
             self._logger.error(str(exc))
-            self._start_polling()
+            # Not when retrying cannot help (no SDK key at all), which would
+            # only repeat the same error on every interval.
+            if exc.retryable:
+                self._start_polling()
             self._init_result = InitResult(success=False, source="error", error=exc)
             return self._init_result
 
@@ -504,7 +517,10 @@ class AsyncAvsbServer:
         return self._http
 
     async def _fetch_datafile(self, timeout: float) -> FlagDatafile:
-        url = self.datafile_url
+        # Raises DatafileFetchError, never ValueError, when there is no key.
+        url = datafile_target(
+            self._sdk_key, url=self._explicit_datafile_url, cdn_host=self._cdn_host
+        )
         try:
             response = await self._client().get(url, timeout=timeout)
         except asyncio.CancelledError:
@@ -580,18 +596,22 @@ class AsyncAvsbServer:
                 await asyncio.sleep(jittered_interval(self._polling_interval))
             except asyncio.CancelledError:
                 return
+            # close() can run while this task sleeps; mypy narrows
+            # self._closed from the loop condition and cannot see that.
             if self._closed:
-                return
+                return  # type: ignore[unreachable]
             try:
                 await self.refresh_datafile()
             except asyncio.CancelledError:
                 return
             except Exception as exc:  # noqa: BLE001 - a background task
                 # A task that dies takes refresh with it for the whole process
-                # lifetime, so every error is named and the loop continues.
+                # lifetime, so every error is named (in the message itself, so
+                # a logger that drops fields still says why) and the loop
+                # continues.
                 self._logger.error(
-                    "A vs B datafile refresh raised unexpectedly and was "
-                    "skipped. The next attempt runs on the polling interval.",
+                    f"A vs B datafile refresh raised unexpectedly ({exc}) and "
+                    "was skipped. The next attempt runs on the polling interval.",
                     {"error": str(exc)},
                 )
 

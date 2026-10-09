@@ -88,7 +88,10 @@ def test_retry_after_wins_for_one_attempt_and_still_advances_the_counter() -> No
         ("5", 5000),
         ("0.5", 500),
         (" 12 ", 12000),
-        ("0", None),
+        # The TypeScript reference (@avsbhq/utils parseRetryAfter) parses "0"
+        # to 0, and so does this port. A zero is never used as a delay:
+        # next_backoff treats it as absent, which the test below locks.
+        ("0", 0),
         ("-1", None),
         ("", None),
         ("   ", None),
