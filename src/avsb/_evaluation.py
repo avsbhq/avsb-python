@@ -25,37 +25,25 @@ from __future__ import annotations
 
 import time
 from dataclasses import replace
-from typing import Any, Callable, Iterable, Mapping, Protocol
+from typing import Any, Callable, Iterable, Protocol
 
+from ._evaluation_typed import _TypedGettersMixin
 from .core.context import bucketing_key, private_attributes_from
-from .core.datafile_types import (
-    FlagDatafile,
-    FlagDatafileEntry,
-    FlagDatafileVariation,
-)
+from .core.datafile_types import FlagDatafile
 from .core.evaluate import EvaluateFlagOptions, evaluate_flag
 from .core.events import FLAG_EXPOSURE_EVENT, ExposureEvent, MetricEvent
 from .core.bandits import BanditModelStore
-from .core.types import (
-    DecideOption,
-    EvalContext,
-    Flag,
-    FlagEvaluationDetails,
-    SingleContext,
-)
+from .core.types import DecideOption, EvalContext, Flag, FlagEvaluationDetails
 from .decision_log import DecisionLogCollector
 from .logger import Logger
 from .overrides import RuntimeOverrides
 from .sources import details_to_flag, not_ready_flag
 from .sticky_pipeline import StickyHit, StickyPipeline
 
-#: Flag types the datafile declares, and the getter each one belongs to.
-_GETTER_FOR_TYPE = {
-    "boolean": "get_bool_flag",
-    "string": "get_string_flag",
-    "number": "get_number_flag",
-    "json": "get_json_flag",
-}
+# The datafile lookups moved to _evaluation_typed.py with the typed getters
+# (FU-31); re-exported, explicitly, so this stays their import path.
+from ._evaluation_typed import find_flag as find_flag
+from ._evaluation_typed import find_variation_by_key as find_variation_by_key
 
 
 class EventQueue(Protocol):
@@ -71,7 +59,7 @@ class EventQueue(Protocol):
     def queue_metric(self, event: MetricEvent) -> None: ...
 
 
-class EvaluationCore:
+class EvaluationCore(_TypedGettersMixin):
     """Holds the datafile and decides flags. Owned by a client, never alone."""
 
     def __init__(
@@ -101,6 +89,7 @@ class EvaluationCore:
         self._warned_empty_context = False
         self._warned_track_properties = False
         self._warned_type_mismatch: set[tuple[str, str]] = set()
+        self._warned_missing: set[str] = set()
 
     # -- Public evaluation --------------------------------------------------
 
@@ -116,64 +105,6 @@ class EvaluationCore:
         return self.evaluate(
             flag_key, default_value, context, decide_options, record_decision=True
         )
-
-    def get_bool_flag(
-        self,
-        flag_key: str,
-        default_value: bool,
-        context: EvalContext | None = None,
-        *,
-        decide_options: Iterable[DecideOption] | None = None,
-    ) -> bool:
-        """Evaluate a boolean flag, never coercing a non-boolean value."""
-        value = self._typed_value(
-            flag_key, default_value, context, "boolean", decide_options
-        )
-        return value if isinstance(value, bool) else default_value
-
-    def get_string_flag(
-        self,
-        flag_key: str,
-        default_value: str,
-        context: EvalContext | None = None,
-        *,
-        decide_options: Iterable[DecideOption] | None = None,
-    ) -> str:
-        """Evaluate a string flag."""
-        value = self._typed_value(
-            flag_key, default_value, context, "string", decide_options
-        )
-        return value if isinstance(value, str) else default_value
-
-    def get_number_flag(
-        self,
-        flag_key: str,
-        default_value: float,
-        context: EvalContext | None = None,
-        *,
-        decide_options: Iterable[DecideOption] | None = None,
-    ) -> float:
-        """Evaluate a numeric flag."""
-        value = self._typed_value(
-            flag_key, default_value, context, "number", decide_options
-        )
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            return default_value
-        return float(value)
-
-    def get_json_flag(
-        self,
-        flag_key: str,
-        default_value: Any,
-        context: EvalContext | None = None,
-        *,
-        decide_options: Iterable[DecideOption] | None = None,
-    ) -> Any:
-        """Evaluate a JSON flag."""
-        return self._typed_value(
-            flag_key, default_value, context, "json", decide_options
-        )
-
     def get_all_flags(
         self,
         context: EvalContext | None = None,
@@ -241,40 +172,11 @@ class EvaluationCore:
             )
         )
 
-    # -- Conversions --------------------------------------------------------
-
-    def build_metric_event(
-        self,
-        event_key: str,
-        context: EvalContext | None,
-        *,
-        revenue: float | None,
-        value: float | None,
-        properties: Mapping[str, Any] | None,
-    ) -> MetricEvent:
-        """Build a conversion event, warning once if properties were passed."""
-        if properties and not self._warned_track_properties:
-            self._warned_track_properties = True
-            self.logger.warn(
-                f'track("{event_key}") was given properties, but conversion '
-                "events have no properties field: A vs B attributes them from "
-                "the visitor's recorded exposures instead, and anything sent "
-                "under that name is discarded server-side. The properties were "
-                "NOT sent. Pass a number as value= for an average-value "
-                "metric, or put the dimension on the evaluation context so it "
-                "rides the exposure event as a registered attribute. This "
-                "warning is logged once per process."
-            )
-        return MetricEvent(
-            visitor_id=bucketing_key(context) if context is not None else "",
-            event_name=event_key,
-            revenue=revenue,
-            value=value,
-            timestamp=int(time.time() * 1000),
-            page_url="",
-        )
-
     # -- Internals ----------------------------------------------------------
+    #
+    # The typed getters live in _TypedGettersMixin (_evaluation_typed.py);
+    # build_metric_event, resolve_context and the once-only warnings live in
+    # _EvaluationWarningsMixin (_evaluation_warnings.py).
 
     def evaluate(
         self,
@@ -311,6 +213,8 @@ class EvaluationCore:
             reasons=reasons,
             record_exposure=record_exposure,
         )
+        if details.source == "not_found":
+            self._warn_missing(flag_key)
 
         flag = details_to_flag(
             details,
@@ -428,64 +332,6 @@ class EvaluationCore:
     def _evaluate_options(self) -> EvaluateFlagOptions:
         return EvaluateFlagOptions(bandit_model_store=self.bandit_model_store)
 
-    def _typed_value(
-        self,
-        flag_key: str,
-        default_value: Any,
-        context: EvalContext | None,
-        expected_type: str,
-        decide_options: Iterable[DecideOption] | None,
-    ) -> Any:
-        flag = self.evaluate(
-            flag_key, default_value, context, decide_options, record_decision=True
-        )
-        if flag.source in ("not_found", "not_ready"):
-            # Already the caller's default, with its type intact.
-            return flag.value
-
-        entry = find_flag(self.datafile, flag_key)
-        if entry is not None and entry.type != expected_type:
-            self._warn_type_mismatch(flag_key, entry.type, expected_type)
-            return default_value
-        return flag.value
-
-    def _warn_type_mismatch(
-        self, flag_key: str, declared: str, requested: str
-    ) -> None:
-        marker = (flag_key, requested)
-        if marker in self._warned_type_mismatch:
-            return
-        self._warned_type_mismatch.add(marker)
-        correct = _GETTER_FOR_TYPE.get(declared, "get_flag")
-        # Name the getter by its real method name: "boolean" is read with
-        # get_bool_flag, and get_boolean_flag does not exist (N1-18).
-        used = _GETTER_FOR_TYPE.get(requested, f"get_{requested}_flag")
-        self.logger.warn(
-            f'Flag "{flag_key}" is declared as a {declared} flag, but it was '
-            f"read with {used}, so the default value came back "
-            f"instead of a coerced one. Call {correct}, or change the flag's "
-            "type in the dashboard. This warning is logged once per flag and "
-            "getter."
-        )
-
-    def resolve_context(
-        self, context: EvalContext | None, flag_key: str
-    ) -> EvalContext:
-        """Return the context to evaluate with, warning once when none was given."""
-        if context is not None:
-            return context
-        if not self._warned_empty_context:
-            self._warned_empty_context = True
-            self.logger.warn(
-                f'A vs B flag "{flag_key}" was evaluated with no context, so '
-                "every caller in this process lands in the same bucket and any "
-                "experiment on it records exactly one visitor. Pass a context: "
-                f'server.get_bool_flag("{flag_key}", False, '
-                "SingleContext.user(key=user_id)). This warning is logged once "
-                "per process."
-            )
-        return SingleContext(kind="user", key="")
-
     def _fire_sticky_exposure(
         self,
         datafile: FlagDatafile,
@@ -534,36 +380,6 @@ class EvaluationCore:
             tracker.queue(event)
 
         return queue
-
-
-# ---------------------------------------------------------------------------
-# Lookups
-# ---------------------------------------------------------------------------
-
-
-def find_flag(
-    datafile: FlagDatafile | None, flag_key: str
-) -> FlagDatafileEntry | None:
-    """Find a flag entry by key, or ``None``."""
-    if datafile is None:
-        return None
-    for entry in datafile.flags:
-        if entry.key == flag_key:
-            return entry
-    return None
-
-
-def find_variation_by_key(
-    flag: FlagDatafileEntry | None, variation_key: str
-) -> FlagDatafileVariation | None:
-    """Find a variation by its key, or ``None``."""
-    if flag is None:
-        return None
-    for variation in flag.variations:
-        if variation.key == variation_key:
-            return variation
-    return None
-
 
 def _micros_since(started: float) -> int:
     return max(0, round((time.perf_counter() - started) * 1_000_000))

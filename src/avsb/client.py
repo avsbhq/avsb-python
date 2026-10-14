@@ -37,10 +37,11 @@ import threading
 from typing import Any, Iterable, Mapping
 
 from ._evaluation import EvaluationCore
+from ._sync_datafile import _SyncDatafileMixin
+from ._sync_tracking import MAX_PENDING_EVENTS
 from .core._datafile_loader import parse_datafile
 from .core.bandits import BanditModelStore
 from .core.datafile_types import FlagDatafile
-from .core.events import PurchaseOrder
 from .core.types import (
     DecideOption,
     DecisionLog,
@@ -51,13 +52,7 @@ from .core.types import (
 )
 from .decision_log import DecisionLogCollector
 from .endpoints import datafile_url as build_datafile_url
-from .endpoints import resolve_heartbeat_endpoint
-from .fetcher import (
-    DEFAULT_FETCH_TIMEOUT_SECONDS,
-    DatafileFetchError,
-    DatafileTransport,
-    fetch_datafile,
-)
+from .fetcher import DEFAULT_FETCH_TIMEOUT_SECONDS, DatafileTransport
 from .heartbeat import Heartbeat, HeartbeatSender
 from .logger import Logger, default_logger
 from .overrides import RuntimeOverrides
@@ -68,14 +63,10 @@ from .sticky_pipeline import StickyPipeline
 from .tracker import EventSender, ServerTracker, TrackerOptions
 from .user_bound import UserBoundClient
 
-#: Conversions recorded before the client is ready wait here. Bounded, so a
-#: process that never reaches ready cannot grow its memory without limit.
-MAX_PENDING_EVENTS = 500
-
 __all__ = ["AvsbServer", "MAX_PENDING_EVENTS", "to_public_source"]
 
 
-class AvsbServer:
+class AvsbServer(_SyncDatafileMixin):
     """Synchronous A vs B feature-flag and experimentation client.
 
     One instance per process. It owns a background polling thread and a
@@ -222,80 +213,9 @@ class AvsbServer:
         return self._poller is not None and self._poller.is_running
 
     # -- Lifecycle ----------------------------------------------------------
-
-    def on_ready(self, timeout: float | None = None) -> InitResult:
-        """Load the datafile and start the background threads.
-
-        Blocks until the first fetch settles. Returns an
-        :class:`~avsb.InitResult` and never raises: a failed fetch leaves the
-        client serving defaults with source ``not_ready`` while polling keeps
-        retrying, so a transient network error at deploy time does not brick
-        flags until restart.
-
-        Idempotent: calling it again returns the first result.
-        """
-        with self._lock:
-            if self._init_result is not None:
-                return self._init_result
-            self._init_result = self._initialize(timeout)
-            return self._init_result
-
-    def refresh_datafile(self) -> bool:
-        """Fetch the datafile now. Returns whether the configuration changed.
-
-        A failed refresh keeps the datafile already loaded and logs why: stale
-        flags beat no flags.
-        """
-        try:
-            datafile, _source = self._fetch(self._init_timeout)
-        except DatafileFetchError as exc:
-            self._logger.warn(
-                "A vs B datafile refresh failed, so the configuration already "
-                f"loaded is being kept. {exc}"
-            )
-            return False
-
-        previous = self._core.datafile
-        changed = previous is None or previous.published_at != datafile.published_at
-        self._core.datafile = datafile
-        if previous is None:
-            self._start_tracker()
-            self._logger.info(
-                "A vs B is ready: a datafile arrived on the polling interval "
-                "after the first fetch failed."
-            )
-        elif changed:
-            self._logger.info(
-                "A vs B flag configuration updated.",
-                {"published_at": datafile.published_at},
-            )
-        self._send_heartbeat()
-        return changed
-
-    def close(self) -> None:
-        """Stop the background threads and deliver any queued events.
-
-        Call this on shutdown, or use the client as a context manager.
-        Idempotent. After closing, evaluations return defaults with source
-        ``not_ready``.
-        """
-        if self._closed:
-            return
-        self._closed = True
-        self._core.closed = True
-        if self._poller is not None:
-            self._poller.stop()
-            self._poller = None
-        if self._tracker is not None:
-            self._tracker.close()
-            self._tracker = None
-        self._core.tracker = None
-        self._core.datafile = None
-
-    def flush(self) -> None:
-        """Deliver queued events now, without closing the client."""
-        if self._tracker is not None:
-            self._tracker.flush()
+    #
+    # on_ready, refresh_datafile, close and flush are inherited from
+    # _SyncDatafileMixin and _SyncTrackingMixin.
 
     def __enter__(self) -> "AvsbServer":
         self.on_ready()
@@ -447,68 +367,7 @@ class AvsbServer:
 
     # -- Tracking -----------------------------------------------------------
 
-    def track(
-        self,
-        event_key: str,
-        context: EvalContext | None = None,
-        *,
-        revenue: float | None = None,
-        value: float | None = None,
-        properties: Mapping[str, Any] | None = None,
-    ) -> None:
-        """Record a conversion or metric event.
-
-        :param event_key: The metric key configured in the dashboard. An
-            unrecognised key is still stored, so a typo shows up as an empty
-            metric rather than an error.
-        :param context: Who converted. The visitor id comes from it, and
-            attribution to experiments happens server-side from that visitor's
-            recorded exposures.
-        :param revenue: Money, in decimal major units. ``None`` for a
-            non-revenue conversion.
-        :param value: The number behind an average-value metric. ``None`` for a
-            count.
-        :param properties: Accepted for symmetry with exposures, but conversion
-            events have no properties field, so these cannot be stored. Passing
-            them logs one warning per process rather than pretending they
-            arrived. Put a number in ``value``, or put the dimension on the
-            evaluation context so it rides the exposure event as a registered
-            attribute.
-
-        Events recorded before :meth:`on_ready` completes are queued and
-        delivered once the client is ready.
-        """
-        event = self._core.build_metric_event(
-            event_key,
-            context,
-            revenue=revenue,
-            value=value,
-            properties=properties,
-        )
-        if not self._events_enabled:
-            return
-        tracker = self._tracker
-        if tracker is None:
-            self._queue_pending(event)
-            return
-        tracker.queue_metric(event)
-
-    def track_purchase(self, visitor_id: str, order: PurchaseOrder) -> None:
-        """Send a purchase immediately, bypassing the batch timer.
-
-        An order is the event a customer least wants buffered, so this fires on
-        the calling thread with the same retry curve a batch gets.
-        """
-        if not self._events_enabled:
-            return
-        tracker = self._tracker
-        if tracker is None:
-            self._logger.warn(
-                f'Purchase "{order.order_id}" was dropped because A vs B is not '
-                "ready yet. Call on_ready() at startup, before serving traffic."
-            )
-            return
-        tracker.track_purchase(visitor_id, order)
+    # track and track_purchase are inherited from _SyncTrackingMixin.
 
     def manual_exposure(self, flag_key: str, context: EvalContext) -> None:
         """Record an exposure without taking a new decision.
@@ -534,98 +393,3 @@ class AvsbServer:
     def snapshot_decision_log(self) -> DecisionLog:
         """Return the recorded decisions without clearing them."""
         return self._core.decision_log.snapshot()
-
-    # ------------------------------------------------------------------
-    # Internals
-    # ------------------------------------------------------------------
-
-    def _initialize(self, timeout: float | None) -> InitResult:
-        if self._core.datafile is not None:
-            return InitResult(success=True, source="bootstrap")
-
-        try:
-            datafile, source = self._fetch(
-                timeout if timeout is not None else self._init_timeout
-            )
-        except DatafileFetchError as exc:
-            self._logger.error(str(exc))
-            # Polling still starts: the next successful fetch promotes the
-            # client to ready without a restart. Not when retrying cannot help
-            # (no SDK key at all), which would only repeat the same error.
-            if exc.retryable:
-                self._start_polling()
-            return InitResult(success=False, source="error", error=exc)
-
-        self._core.datafile = datafile
-        self._logger.debug(
-            f"A vs B datafile loaded from {source.url}",
-            {"bytes": source.size_bytes, "published_at": datafile.published_at},
-        )
-        self._on_datafile_ready()
-        return InitResult(success=True, source="network")
-
-    def _fetch(self, timeout: float) -> tuple[FlagDatafile, Any]:
-        return fetch_datafile(
-            self._sdk_key,
-            url=self._explicit_datafile_url,
-            cdn_host=self._cdn_host,
-            timeout=timeout,
-            transport=self._transport,
-        )
-
-    def _on_datafile_ready(self) -> None:
-        self._start_tracker()
-        self._start_polling()
-        self._send_heartbeat()
-
-    def _queue_pending(self, event: Any) -> None:
-        if len(self._pending_metrics) >= MAX_PENDING_EVENTS:
-            dropped = self._pending_metrics.pop(0)
-            self._logger.warn(
-                f"A vs B is holding {MAX_PENDING_EVENTS} conversion events "
-                "recorded before startup finished, so the oldest was dropped "
-                f'("{dropped.event_name}"). Call on_ready() before serving '
-                "traffic so events are delivered instead of buffered."
-            )
-        self._pending_metrics.append(event)
-
-    def _start_tracker(self) -> None:
-        if self._tracker is not None or not self._events_enabled:
-            return
-        datafile = self._core.datafile
-        if datafile is None:
-            return
-        self._tracker = ServerTracker(
-            sdk_key=self._sdk_key,
-            collect_endpoint=datafile.collect_endpoint,
-            options=self._tracker_options,
-            logger=self._logger,
-            sender=self._event_sender,
-        )
-        self._core.tracker = self._tracker
-        if self._pending_metrics:
-            queued = self._pending_metrics
-            self._pending_metrics = []
-            for event in queued:
-                self._tracker.queue_metric(event)
-
-    def _start_polling(self) -> None:
-        if not self._polling_enabled or self._poller is not None or self._closed:
-            return
-        self._poller = PollingThread(
-            self._poll_once,
-            interval_seconds=self._polling_interval,
-            logger=self._logger,
-        )
-        self._poller.start()
-
-    def _poll_once(self) -> None:
-        if self._closed:
-            return
-        self.refresh_datafile()
-
-    def _send_heartbeat(self) -> None:
-        datafile = self._core.datafile
-        if datafile is None:
-            return
-        self._heartbeat.send(resolve_heartbeat_endpoint(datafile.heartbeat_endpoint))

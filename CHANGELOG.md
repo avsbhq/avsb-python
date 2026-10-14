@@ -26,6 +26,11 @@ semantics that made Python disagree with the other A vs B SDKs.
 
 ### Added
 
+- **A missing flag key is said out loud, once per key.** Reading a key the
+  datafile does not carry logs a warning the first time, in the same words
+  every A vs B SDK uses, and for a key the platform would refuse (a hyphen, a
+  capital, a space) it suggests the spelling to use: `new-checkout-flow` gets
+  "did you mean "new_checkout_flow"?". Both the sync and async clients.
 - **Event recording.** `track`, `track_purchase`, and `manual_exposure`, plus
   automatic exposure recording on rule, bandit, holdout, and sticky decisions.
   Delivery is batched with a bounded queue, retried on a jittered backoff curve,

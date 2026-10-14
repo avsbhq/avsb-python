@@ -276,7 +276,7 @@
           "sdkVersion": "string"
         },
         "notes": {
-          "sdkType": "The package identifier, exactly as published: @avsbhq/node, @avsbhq/browser, avsb-python, avsb-go, avsb-ruby, avsbhq/avsb, com.avsbhq:avsb-sdk, Avsb.SDK.",
+          "sdkType": "The package identifier, exactly as published: @avsbhq/node, @avsbhq/browser, avsb-python, avsb-go, avsb-ruby, avsbhq/avsb, cloud.avsb:avsb-sdk, Avsb.SDK.",
           "sdkVersion": "The package version, read from build metadata rather than a hand-maintained literal."
         }
       },

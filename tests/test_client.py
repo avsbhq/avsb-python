@@ -1195,3 +1195,35 @@ def test_polling_starts_only_when_enabled_and_stops_on_close(
     # never aborted halfway.
     server.close()
     assert server.is_polling() is False
+
+
+# ---------------------------------------------------------------------------
+# A missing key is said once, with a hint (FU-41)
+# ---------------------------------------------------------------------------
+
+
+def test_a_missing_key_is_warned_once_per_key_with_the_spelling_hint() -> None:
+    logger = CollectingLogger()
+    server = _server(logger=logger, events_enabled=False)
+    ctx = SingleContext.user(key="alice")
+
+    for _ in range(3):
+        assert server.get_bool_flag("new-checkout-flow", False, ctx) is False
+    assert server.get_flag("new-checkout-flow", False, ctx).source == "not_found"
+    server.get_string_flag("checkout_v3", "x", ctx)
+
+    # Before the fix the read was silent: only the returned source said not_found.
+    assert logger.count("warn", 'AvsB flag "new-checkout-flow" is not in this') == 1
+    assert logger.count("warn", 'did you mean "new_checkout_flow"?') == 1
+    assert logger.count("warn", 'AvsB flag "checkout_v3" is not in this') == 1
+    assert logger.count("warn", "archived flags are left out of the datafile") == 1
+    server.close()
+
+
+def test_a_key_that_exists_is_never_warned_as_missing() -> None:
+    logger = CollectingLogger()
+    server = _server(logger=logger, events_enabled=False)
+    for flag in server.get_all_flags(SingleContext.user(key="alice")).values():
+        assert flag.source != "not_found"
+    assert logger.count("warn", "is not in this environment's datafile") == 0
+    server.close()

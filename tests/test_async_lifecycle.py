@@ -94,3 +94,34 @@ async def test_on_ready_with_an_empty_key_returns_a_failure_instead_of_raising()
     assert client.gets == []
     assert server.is_polling() is False
     await server.close()
+
+
+async def test_the_async_client_warns_once_per_missing_key_like_the_sync_one() -> None:
+    from avsb.core.types import SingleContext
+
+    warnings: list[str] = []
+
+    class _Logger:
+        def debug(self, message: str, data: object = None) -> None:
+            pass
+
+        def info(self, message: str, data: object = None) -> None:
+            pass
+
+        def warn(self, message: str, data: object = None) -> None:
+            warnings.append(message)
+
+        def error(self, message: str, data: object = None) -> None:
+            pass
+
+    server = _async_server(
+        _datafile(), FakeAsyncClient(), events_enabled=False, logger=_Logger()
+    )
+    ctx = SingleContext.user(key="alice")
+    server.get_bool_flag("dark-mode", False, ctx)
+    server.get_bool_flag("dark-mode", False, ctx)
+
+    missing = [w for w in warnings if 'AvsB flag "dark-mode" is not in this' in w]
+    assert len(missing) == 1
+    assert 'did you mean "dark_mode"?' in missing[0]
+    await server.close()
